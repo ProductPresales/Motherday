@@ -1074,25 +1074,7 @@
     }
 
     function updatePreview() {
-      const name = document.getElementById('momName').value || '—';
-      const age = parseInt(document.getElementById('yourAge').value) || 0;
-      const box = document.getElementById('previewBox');
-      if (!age) {
-        box.innerHTML = '<strong>RECEIPT PREVIEW</strong><br>─────────────────────────<br>Enter your age to see numbers...';
-        return;
-      }
-      const d = calculate(name, age);
-      box.innerHTML =
-        `<strong>BILL OF LOVE · ${name.toUpperCase()}</strong><br>` +
-        `─────────────────────────<br>` +
-        (isOn('t-tiffin') ? `Tiffins packed.......${d.tiffins.toLocaleString('en-IN')}<br>` : '') +
-        (isOn('t-khaya') ? `"Khaana khaya?".....${d.khaya.toLocaleString('en-IN')}<br>` : '') +
-        (isOn('t-hungry') ? `"I'm not hungry"....${d.hungry.toLocaleString('en-IN')}<br>` : '') +
-        (isOn('t-sick') ? `Sick-night hours.....${d.sickHrs.toLocaleString('en-IN')}<br>` : '') +
-        (isOn('t-pray') ? `Morning prayers.....${d.prayers.toLocaleString('en-IN')}<br>` : '') +
-        `─────────────────────────<br>` +
-        `Total devotion hrs..${d.totalHours.toLocaleString('en-IN')}<br>` +
-        `= ${d.totalYears} years of her life.`;
+      // Preview is hidden, no need to update
     }
 
     // ── GENERATE ───────────────────────────────────────
@@ -1298,7 +1280,6 @@
     }
 
     async function shareWhatsApp() {
-    async function shareWhatsApp() {
       // If blob not yet ready (recording just stopped, onstop pending), wait
       if (!recordedBlob && mediaRecorder && mediaRecorder.state === 'inactive' && recordedChunks.length > 0) {
         await new Promise(resolve => setTimeout(resolve, 1200));
@@ -1335,7 +1316,6 @@
     }
 
     function downloadVideo() {
-      if (!recordedBlob) { alert('Video is still being prepared. Please wait a moment and try again.'); return; }
       if (!recordedBlob) { alert('Video is still being prepared. Please wait a moment and try again.'); return; }
       const fileName = `moms_bill_${(calcData.name||'mom').replace(/\s+/g,'_')}.mp4`;
       const mobileBlob = new Blob([recordedBlob], { type: 'video/mp4' });
