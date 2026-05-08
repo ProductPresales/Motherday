@@ -974,6 +974,12 @@
     let recordedChunks = [];
     let mediaRecorder = null;
     let recordedBlob = null;
+    
+    // ── BACKGROUND RECORDING ───────────────────────────
+    let bgCanvas = null;
+    let bgCtx = null;
+    let bgAnimFrame = null;
+    let bgStartTime = 0;
 
     // ── AUDIO (none for now) ──
     function startMusic() { }
@@ -996,59 +1002,54 @@
     }
 
     function startRecording() {
-      const canvas = document.getElementById('mainCanvas');
-      if (!canvas.captureStream) return;
-      // Reset share button to 'preparing' state
+      // Create hidden canvas for perfect background rendering
+      bgCanvas = document.createElement('canvas');
+      bgCanvas.width = 540;
+      bgCanvas.height = 960;
+      bgCtx = bgCanvas.getContext('2d', { alpha: false });
+      
+      if (!bgCanvas.captureStream) return;
+      
       const btn = document.getElementById('endShareBtn');
       if (btn) { btn.disabled = true; btn.style.opacity = '0.55'; btn.style.cursor = 'not-allowed'; }
       const lbl = document.getElementById('endShareLabel');
       if (lbl) lbl.textContent = '⏳ Preparing video...';
+      
       try {
         recordedChunks = []; recordedBlob = null;
-        const stream = canvas.captureStream(30);
-        // Prefer MP4 (mobile-friendly), fall back to WebM
+        const stream = bgCanvas.captureStream(30);
         const mime = [
-          'video/mp4',
-          'video/mp4;codecs=avc1',
-          'video/webm;codecs=vp9',
-          'video/webm;codecs=vp8',
-          'video/webm'
+          'video/mp4', 'video/mp4;codecs=avc1', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'
         ].find(t => { try { return MediaRecorder.isTypeSupported(t); } catch (_) { return false; } }) || '';
-        mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+        
+        mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 8000000 } : { videoBitsPerSecond: 8000000 });
         mediaRecorder.ondataavailable = ev => { if (ev.data.size > 0) recordedChunks.push(ev.data); };
         mediaRecorder.onstop = () => {
           const actualMime = mediaRecorder.mimeType || 'video/webm';
           recordedBlob = new Blob(recordedChunks, { type: actualMime });
-          // Enable share button now that video is ready
           const b = document.getElementById('endShareBtn');
           const l = document.getElementById('endShareLabel');
           if (b) { b.disabled = false; b.style.opacity = '1'; b.style.cursor = 'pointer'; }
           if (l) l.textContent = 'Share Video on WhatsApp';
         };
         mediaRecorder.start(200);
+        
+        bgStartTime = performance.now();
+        bgTick();
       } catch (err) {
         console.warn('Recording unavailable:', err);
-        const b = document.getElementById('endShareBtn');
-        const l = document.getElementById('endShareLabel');
-        if (b) { b.disabled = false; b.style.opacity = '1'; b.style.cursor = 'pointer'; }
-        if (l) l.textContent = 'Share on WhatsApp';
       }
     }
 
-    function pauseRecording() {
-      if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.pause();
+    function bgTick() {
+      const elapsed = performance.now() - bgStartTime;
+      const t = Math.min(elapsed, DURATION);
+      drawFrame(bgCtx, t);
+      if (t < DURATION) {
+        bgAnimFrame = requestAnimationFrame(bgTick);
+      } else {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
       }
-    }
-
-    function resumeRecording() {
-      if (mediaRecorder && mediaRecorder.state === 'paused') {
-        mediaRecorder.resume();
-      }
-    }
-
-    function stopRecording() {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
     }
 
     // ── NAVIGATION ─────────────────────────────────────
@@ -1098,6 +1099,9 @@
         `Meals of love: ${d.mealsLove.toLocaleString('en-IN')}<br>` +
         `Mornings for you: ${d.mornings.toLocaleString('en-IN')}`;
 
+      // Start perfect background recording immediately
+      startRecording();
+
       // Loading
       showPage('loading-page');
       document.getElementById('loadingName').textContent = `Calculating ${name}'s lifetime of love...`;
@@ -1144,12 +1148,6 @@
       showPlayOverlay(false);
       videoStartTime = performance.now() - pausedAt;
       updatePlayBtn();
-      // Only start fresh recording if playing from the beginning
-      if (pausedAt === 0) {
-        startRecording();
-      } else {
-        resumeRecording();
-      }
       startMusic();
       tick();
     }
@@ -1160,7 +1158,6 @@
       cancelAnimationFrame(animFrame);
       showPlayOverlay(true, false);
       updatePlayBtn();
-      pauseRecording();
       pauseMusic();
     }
 
@@ -1173,7 +1170,6 @@
       showPlayOverlay(false);
       videoStartTime = performance.now();
       updatePlayBtn();
-      startRecording(); // Fresh recording for replay
       startMusic();
       tick();
     }
@@ -1189,7 +1185,6 @@
       } else {
         isDone = true;
         isPlaying = false;
-        stopRecording();
         stopMusic();
         showEndOverlay();
         updatePlayBtn();
@@ -1285,7 +1280,7 @@
       }
 
       if (!recordedBlob) {
-        alert('Video is still being prepared. Please wait a moment and try again.');
+        alert("We're crafting your high-quality video! Please watch it to the end or wait a moment for the download to be ready.");
         return;
       }
 
@@ -1315,7 +1310,7 @@
     }
 
     function downloadVideo() {
-      if (!recordedBlob) { alert('Video is still being prepared. Please wait a moment and try again.'); return; }
+      if (!recordedBlob) { alert("We're crafting your high-quality video! Please watch it to the end or wait a moment for the download to be ready."); return; }
       const fileName = `moms_bill_${(calcData.name||'mom').replace(/\s+/g,'_')}.mp4`;
       const mobileBlob = new Blob([recordedBlob], { type: 'video/mp4' });
       const url = URL.createObjectURL(mobileBlob);
@@ -1491,8 +1486,17 @@
 
       // ══ FRAME 8: Poem — she didn't keep count ════════
       if (inF(8)) {
-        darkBg('#1E000E','#540028');
-        const p=fp(8); ctx.save(); ctx.textAlign='center';
+        const p=fp(8); darkBg('#1E000E','#540028');
+        if(momPhotoImg&&momPhotoImg.complete&&momPhotoImg.naturalWidth>0){
+          ctx.save(); ctx.globalAlpha=easeOut(Math.min(1,p*2.5));
+          const iW=momPhotoImg.naturalWidth,iH=momPhotoImg.naturalHeight,sc=Math.max(W/iW,H/iH);
+          ctx.drawImage(momPhotoImg,(W-iW*sc)/2,(H-iH*sc)/2,iW*sc,iH*sc);
+          const scrim=ctx.createLinearGradient(0,0,0,H);
+          scrim.addColorStop(0,'rgba(30,0,14,0.5)'); scrim.addColorStop(0.5,'rgba(30,0,14,0.7)'); scrim.addColorStop(1,'rgba(30,0,14,0.95)');
+          ctx.fillStyle=scrim; ctx.fillRect(0,0,W,H); ctx.restore();
+        }
+
+        ctx.save(); ctx.textAlign='center';
         ctx.globalAlpha=easeOut(Math.min(1,p*2.5));
         typewrite(ctx,`${n.totalDays.toLocaleString('en-IN')} days.`,Math.min(1,p*3),W/2,H/2-155,'italic 36px "Playfair Display"','#FFF5F7',W-100,52);
         if(p>0.22){ ctx.globalAlpha=easeOut(seg(p,0.22,0.7)); typewrite(ctx,'And not one of them was about her.',Math.min(1,seg(p,0.22,0.8)*2),W/2,H/2-60,'italic 28px "Playfair Display"','rgba(248,187,208,0.9)',W-120,44); }
@@ -1505,26 +1509,17 @@
       // ══ FRAME 9: End card — NIAT ══════════════════════
       if (inF(9)) {
         const p=fp(9); darkBg('#880E4F','#AD1457');
-        if(momPhotoImg&&momPhotoImg.complete&&momPhotoImg.naturalWidth>0){
-          ctx.save(); ctx.globalAlpha=easeOut(Math.min(1,p*2.5));
-          const iW=momPhotoImg.naturalWidth,iH=momPhotoImg.naturalHeight,sc=Math.max(W/iW,H/iH);
-          ctx.drawImage(momPhotoImg,(W-iW*sc)/2,(H-iH*sc)/2,iW*sc,iH*sc);
-          const scrim=ctx.createLinearGradient(0,0,0,H);
-          scrim.addColorStop(0,'rgba(40,0,20,0.3)'); scrim.addColorStop(0.5,'rgba(40,0,20,0.5)'); scrim.addColorStop(1,'rgba(40,0,20,0.92)');
-          ctx.fillStyle=scrim; ctx.fillRect(0,0,W,H); ctx.restore();
-        } else {
-          // Dynamic background design for fallback
-          ctx.save(); ctx.globalAlpha=easeOut(p)*0.35;
-          const hearts = ['💗', '✨', '🌸', '💖', '✨', '🌺'];
-          ctx.font = '28px serif';
-          for (let i = 0; i < 15; i++) {
-             // Slowly drift upwards based on time `t`
-             const hx = W * ((i * 0.17 + (t * 0.00002)) % 1);
-             const hy = H - ((H * 1.2) * ((i * 0.23 + (t * 0.00005)) % 1));
-             ctx.fillText(hearts[i % hearts.length], hx, hy);
-          }
-          ctx.restore();
+        // Dynamic background design for fallback
+        ctx.save(); ctx.globalAlpha=easeOut(p)*0.35;
+        const hearts = ['💗', '✨', '🌸', '💖', '✨', '🌺'];
+        ctx.font = '28px serif';
+        for (let i = 0; i < 15; i++) {
+           // Slowly drift upwards based on time `t`
+           const hx = W * ((i * 0.17 + (t * 0.00002)) % 1);
+           const hy = H - ((H * 1.2) * ((i * 0.23 + (t * 0.00005)) % 1));
+           ctx.fillText(hearts[i % hearts.length], hx, hy);
         }
+        ctx.restore();
         ctx.save(); ctx.textAlign='center'; const cy=H/2;
         ctx.globalAlpha=easeOut(Math.min(1,p*3));
         ctx.font='12px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.6)';

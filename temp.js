@@ -6,9 +6,9 @@
     let pausedAt = 0;
     let isPlaying = false;
     let isDone = false;
-    const DURATION = 38000;
+    const DURATION = 44000;
 
-    const FRAME_TIMES = [0, 4000, 7000, 11000, 15000, 19000, 23000, 27000, 31000, 35000, 38000];
+    const FRAME_TIMES = [0, 4000, 7000, 11000, 15000, 19000, 23000, 27000, 31000, 38000, 44000];
 
     // ── PHOTO & RECORDING ──────────────────────────────
     let momPhotoURL = null;
@@ -16,6 +16,12 @@
     let recordedChunks = [];
     let mediaRecorder = null;
     let recordedBlob = null;
+    
+    // ── BACKGROUND RECORDING ───────────────────────────
+    let bgCanvas = null;
+    let bgCtx = null;
+    let bgAnimFrame = null;
+    let bgStartTime = 0;
 
     // ── AUDIO (none for now) ──
     function startMusic() { }
@@ -38,59 +44,54 @@
     }
 
     function startRecording() {
-      const canvas = document.getElementById('mainCanvas');
-      if (!canvas.captureStream) return;
-      // Reset share button to 'preparing' state
+      // Create hidden canvas for perfect background rendering
+      bgCanvas = document.createElement('canvas');
+      bgCanvas.width = 540;
+      bgCanvas.height = 960;
+      bgCtx = bgCanvas.getContext('2d', { alpha: false });
+      
+      if (!bgCanvas.captureStream) return;
+      
       const btn = document.getElementById('endShareBtn');
       if (btn) { btn.disabled = true; btn.style.opacity = '0.55'; btn.style.cursor = 'not-allowed'; }
       const lbl = document.getElementById('endShareLabel');
       if (lbl) lbl.textContent = '⏳ Preparing video...';
+      
       try {
         recordedChunks = []; recordedBlob = null;
-        const stream = canvas.captureStream(30);
-        // Prefer MP4 (mobile-friendly), fall back to WebM
+        const stream = bgCanvas.captureStream(30);
         const mime = [
-          'video/mp4',
-          'video/mp4;codecs=avc1',
-          'video/webm;codecs=vp9',
-          'video/webm;codecs=vp8',
-          'video/webm'
+          'video/mp4', 'video/mp4;codecs=avc1', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'
         ].find(t => { try { return MediaRecorder.isTypeSupported(t); } catch (_) { return false; } }) || '';
-        mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+        
+        mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 8000000 } : { videoBitsPerSecond: 8000000 });
         mediaRecorder.ondataavailable = ev => { if (ev.data.size > 0) recordedChunks.push(ev.data); };
         mediaRecorder.onstop = () => {
           const actualMime = mediaRecorder.mimeType || 'video/webm';
           recordedBlob = new Blob(recordedChunks, { type: actualMime });
-          // Enable share button now that video is ready
           const b = document.getElementById('endShareBtn');
           const l = document.getElementById('endShareLabel');
           if (b) { b.disabled = false; b.style.opacity = '1'; b.style.cursor = 'pointer'; }
           if (l) l.textContent = 'Share Video on WhatsApp';
         };
         mediaRecorder.start(200);
+        
+        bgStartTime = performance.now();
+        bgTick();
       } catch (err) {
         console.warn('Recording unavailable:', err);
-        const b = document.getElementById('endShareBtn');
-        const l = document.getElementById('endShareLabel');
-        if (b) { b.disabled = false; b.style.opacity = '1'; b.style.cursor = 'pointer'; }
-        if (l) l.textContent = 'Share on WhatsApp';
       }
     }
 
-    function pauseRecording() {
-      if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.pause();
+    function bgTick() {
+      const elapsed = performance.now() - bgStartTime;
+      const t = Math.min(elapsed, DURATION);
+      drawFrame(bgCtx, t);
+      if (t < DURATION) {
+        bgAnimFrame = requestAnimationFrame(bgTick);
+      } else {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
       }
-    }
-
-    function resumeRecording() {
-      if (mediaRecorder && mediaRecorder.state === 'paused') {
-        mediaRecorder.resume();
-      }
-    }
-
-    function stopRecording() {
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
     }
 
     // ── NAVIGATION ─────────────────────────────────────
@@ -116,25 +117,7 @@
     }
 
     function updatePreview() {
-      const name = document.getElementById('momName').value || '—';
-      const age = parseInt(document.getElementById('yourAge').value) || 0;
-      const box = document.getElementById('previewBox');
-      if (!age) {
-        box.innerHTML = '<strong>RECEIPT PREVIEW</strong><br>─────────────────────────<br>Enter your age to see numbers...';
-        return;
-      }
-      const d = calculate(name, age);
-      box.innerHTML =
-        `<strong>BILL OF LOVE · ${name.toUpperCase()}</strong><br>` +
-        `─────────────────────────<br>` +
-        (isOn('t-tiffin') ? `Tiffins packed.......${d.tiffins.toLocaleString('en-IN')}<br>` : '') +
-        (isOn('t-khaya') ? `"Khaana khaya?".....${d.khaya.toLocaleString('en-IN')}<br>` : '') +
-        (isOn('t-hungry') ? `"I'm not hungry"....${d.hungry.toLocaleString('en-IN')}<br>` : '') +
-        (isOn('t-sick') ? `Sick-night hours.....${d.sickHrs.toLocaleString('en-IN')}<br>` : '') +
-        (isOn('t-pray') ? `Morning prayers.....${d.prayers.toLocaleString('en-IN')}<br>` : '') +
-        `─────────────────────────<br>` +
-        `Total devotion hrs..${d.totalHours.toLocaleString('en-IN')}<br>` +
-        `= ${d.totalYears} years of her life.`;
+      // Preview is hidden, no need to update
     }
 
     // ── GENERATE ───────────────────────────────────────
@@ -144,7 +127,6 @@
       const age = parseInt(document.getElementById('yourAge').value);
       if (!yourName) { alert('Please enter your name 💗'); return; }
       if (!age || age < 1 || age > 60) { alert('Please enter a valid age.'); return; }
-      if (!name) { alert("Please enter your mom's name 💗"); return; }
       if (!name) { alert("Please enter your mom's name 💗"); return; }
 
       calcData = calculate(name, age, yourName);
@@ -158,6 +140,9 @@
         `"Did you eat?": ${d.askedEat.toLocaleString('en-IN')}<br>` +
         `Meals of love: ${d.mealsLove.toLocaleString('en-IN')}<br>` +
         `Mornings for you: ${d.mornings.toLocaleString('en-IN')}`;
+
+      // Start perfect background recording immediately
+      startRecording();
 
       // Loading
       showPage('loading-page');
@@ -205,12 +190,6 @@
       showPlayOverlay(false);
       videoStartTime = performance.now() - pausedAt;
       updatePlayBtn();
-      // Only start fresh recording if playing from the beginning
-      if (pausedAt === 0) {
-        startRecording();
-      } else {
-        resumeRecording();
-      }
       startMusic();
       tick();
     }
@@ -221,7 +200,6 @@
       cancelAnimationFrame(animFrame);
       showPlayOverlay(true, false);
       updatePlayBtn();
-      pauseRecording();
       pauseMusic();
     }
 
@@ -234,7 +212,6 @@
       showPlayOverlay(false);
       videoStartTime = performance.now();
       updatePlayBtn();
-      startRecording(); // Fresh recording for replay
       startMusic();
       tick();
     }
@@ -250,7 +227,6 @@
       } else {
         isDone = true;
         isPlaying = false;
-        stopRecording();
         stopMusic();
         showEndOverlay();
         updatePlayBtn();
@@ -427,7 +403,7 @@
     function drawFrame(ctx, t) {
       if (!ctx) ctx = document.getElementById('mainCanvas').getContext('2d');
       const W = 540, H = 960, n = calcData;
-      const F = [[0,4000],[4000,7000],[7000,11000],[11000,15000],[15000,19000],[19000,23000],[23000,27000],[27000,31000],[31000,35000],[35000,38000]];
+      const F = [[0,4000],[4000,7000],[7000,11000],[11000,15000],[15000,19000],[19000,23000],[23000,27000],[27000,31000],[31000,38000],[38000,44000]];
       const fp    = i => seg(t, F[i][0], F[i][1]);
       const animP = i => Math.min(1, fp(i) * (F[i][1]-F[i][0]) / 1500);
       const inF   = i => t >= F[i][0] && t < F[i][1];
