@@ -964,9 +964,9 @@
     let pausedAt = 0;
     let isPlaying = false;
     let isDone = false;
-    const DURATION = 38000;
+    const DURATION = 44000;
 
-    const FRAME_TIMES = [0, 4000, 7000, 11000, 15000, 19000, 23000, 27000, 31000, 35000, 38000];
+    const FRAME_TIMES = [0, 4000, 7000, 11000, 15000, 19000, 23000, 27000, 31000, 38000, 44000];
 
     // ── PHOTO & RECORDING ──────────────────────────────
     let momPhotoURL = null;
@@ -1367,7 +1367,7 @@
     function drawFrame(ctx, t) {
       if (!ctx) ctx = document.getElementById('mainCanvas').getContext('2d');
       const W = 540, H = 960, n = calcData;
-      const F = [[0,4000],[4000,7000],[7000,11000],[11000,15000],[15000,19000],[19000,23000],[23000,27000],[27000,31000],[31000,35000],[35000,38000]];
+      const F = [[0,4000],[4000,7000],[7000,11000],[11000,15000],[15000,19000],[19000,23000],[23000,27000],[27000,31000],[31000,38000],[38000,44000]];
       const fp    = i => seg(t, F[i][0], F[i][1]);
       const animP = i => Math.min(1, fp(i) * (F[i][1]-F[i][0]) / 1500);
       const inF   = i => t >= F[i][0] && t < F[i][1];
