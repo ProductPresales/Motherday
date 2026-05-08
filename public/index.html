@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mom's Bill · NIAT India</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+    :root {
+      --cream: #FFF5F7;
+      --charcoal: #3D1A24;
+      --maroon: #C2185B;
+      --brown: #AD5E78;
+      --light-brown: #F48FB1;
+      --pale: #FCE4EC;
+      --rose-dark: #880E4F;
+      --blush: #F8BBD0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--cream);
+      color: var(--charcoal);
+      font-family: 'IBM Plex Mono', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── PAGE SECTIONS ─────────────────────────────── */
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── LANDING ────────────────────────────────────── */
+    #landing {
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    #landing::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent 0px, transparent 27px, rgba(139, 69, 19, 0.06) 27px, rgba(139, 69, 19, 0.06) 28px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #landing>* {
+      position: relative;
+      z-index: 1;
+    }
+
+    .niat-badge {
+      font-size: 10px;
+      letter-spacing: 5px;
+      color: var(--brown);
+      text-transform: uppercase;
+      border: 1px solid var(--brown);
+      padding: 7px 18px;
+      display: inline-block;
+      margin-bottom: 36px;
+    }
+
+    .headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(26px, 5.5vw, 52px);
+      font-weight: 700;
+      line-height: 1.3;
+      color: var(--maroon);
+      max-width: 620px;
+      margin-bottom: 20px;
+    }
+
+    .subline {
+      font-size: 12px;
+      color: var(--brown);
+      line-height: 2;
+      max-width: 440px;
+      margin-bottom: 52px;
+      opacity: 0.8;
+    }
+
+    .cta-btn {
+      background: var(--maroon);
+      color: var(--cream);
+      border: none;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 3px;
+      padding: 10px 56px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(75, 21, 40, 0.28);
+    }
+
+    .cta-btn:active {
+      transform: translateY(0);
+    }
+
+    /* ── FORM ───────────────────────────────────────── */
+    #form-page {
+      align-items: center;
+      padding: 40px 24px 60px;
+    }
+
+    .form-inner {
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .form-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      color: var(--maroon);
+      margin-bottom: 6px;
+    }
+
+    .form-subtitle {
+      font-size: 11px;
+      color: var(--brown);
+      letter-spacing: 1.5px;
+      margin-bottom: 44px;
+      opacity: 0.7;
+    }
+
+    .field-group {
+      margin-bottom: 32px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--brown);
+      margin-bottom: 10px;
+    }
+
+    .field-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1.5px solid rgba(139, 69, 19, 0.4);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 20px;
+      color: var(--charcoal);
+      padding: 10px 0;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .field-input:focus {
+      border-color: var(--maroon);
+    }
+
+    .field-input::placeholder {
+      color: rgba(139, 69, 19, 0.3);
+    }
+
+    .toggles-label {
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--brown);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    /* ── HIDDEN SECTIONS ─────────────────────────────── */
+    .toggles-section { display: none !important; }
+    #previewBox { display: none !important; }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(139, 69, 19, 0.12);
+      gap: 16px;
+    }
+
+    .toggle-text .toggle-label-text {
+      font-size: 13px;
+      color: var(--charcoal);
+    }
+
+    .toggle-text .toggle-sub {
+      font-size: 11px;
+      color: var(--brown);
+      opacity: 0.6;
+      margin-top: 3px;
+    }
+
+    .toggle {
+      width: 46px;
+      height: 26px;
+      background: rgba(139, 69, 19, 0.2);
+      border-radius: 13px;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.25s;
+      border: none;
+      flex-shrink: 0;
+    }
+
+    .toggle.on {
+      background: var(--maroon);
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: left 0.25s;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.18);
+    }
+
+    .toggle.on::after {
+      left: 23px;
+    }
+
+    .receipt-preview {
+      background: var(--pale);
+      border: 1px dashed rgba(139, 69, 19, 0.35);
+      padding: 18px 20px;
+      margin: 32px 0;
+      font-size: 11px;
+      line-height: 2.1;
+      color: var(--charcoal);
+    }
+
+    .generate-btn {
+      width: 100%;
+      background: var(--maroon);
+      color: var(--cream);
+      border: none;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 3px;
+      padding: 20px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .generate-btn:hover {
+      opacity: 0.88;
+      transform: translateY(-1px);
+    }
+
+    /* ── LOADING ─────────────────────────────────────── */
+    #loading-page {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px;
+    }
+
+    .loading-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      color: var(--maroon);
+      margin-bottom: 10px;
+    }
+
+    .loading-sub {
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--brown);
+      margin-bottom: 52px;
+      opacity: 0.65;
+    }
+
+    .progress-track {
+      width: min(280px, 80vw);
+      height: 2px;
+      background: rgba(139, 69, 19, 0.18);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--maroon);
+      width: 0%;
+      transition: width 0.08s linear;
+    }
+
+    /* ── VIDEO PAGE ──────────────────────────────────── */
+    #video-page {
+      align-items: center;
+      justify-content: flex-start;
+      padding: 32px 20px 48px;
+      gap: 0;
+    }
+
+    .success-line {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 15px;
+      color: var(--maroon);
+      text-align: center;
+      margin-bottom: 20px;
+      opacity: 0.85;
+    }
+
+    /* ── RESPONSIVE VIDEO PLAYER ─────────────────────── */
+    .player-wrap {
+      width: 100%;
+      max-width: 400px;
+      position: relative;
+    }
+
+    /* 9:16 responsive container */
+    .canvas-container {
+      width: 100%;
+      padding-top: 177.78%;
+      /* 16/9 * 100 */
+      position: relative;
+      background: #000;
+      box-shadow: 0 20px 70px rgba(75, 21, 40, 0.32), 0 4px 16px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    #mainCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Play overlay (shows when paused / ended) */
+    .play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10;
+    }
+
+    .play-overlay.visible {
+      opacity: 1;
+    }
+
+    .play-overlay svg {
+      width: 64px;
+      height: 64px;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+    }
+
+    /* Controls bar */
+    .controls-bar {
+      background: var(--maroon);
+      padding: 10px 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Progress scrubber */
+    .scrubber-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .time-label {
+      font-size: 10px;
+      font-family: 'IBM Plex Mono', monospace;
+      color: rgba(255, 251, 245, 0.7);
+      min-width: 28px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .scrubber {
+      flex: 1;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.25);
+      position: relative;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+
+    .scrubber-fill {
+      height: 100%;
+      background: var(--cream);
+      border-radius: 2px;
+      width: 0%;
+      pointer-events: none;
+    }
+
+    .scrubber-thumb {
+      position: absolute;
+      width: 11px;
+      height: 11px;
+      background: var(--cream);
+      border-radius: 50%;
+      top: 50%;
+      left: 0%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Bottom controls */
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .ctrl-btn {
+      padding: 10px 6px;
+      border: 1.5px solid rgba(255, 251, 245, 0.5);
+      background: transparent;
+      color: var(--cream);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .ctrl-btn.primary {
+      background: rgba(255, 251, 245, 0.15);
+      border-color: var(--cream);
+    }
+
+    /* Frame counter dots */
+    .frame-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(139, 69, 19, 0.25);
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .dot.active {
+      background: var(--maroon);
+      transform: scale(1.4);
+    }
+
+    .back-link {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--brown);
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin-top: 28px;
+      opacity: 0.55;
+      text-decoration: underline;
+    }
+
+    .back-link:hover {
+      opacity: 1;
+    }
+
+    /* Tablet / Desktop: side layout */
+    @media (min-width: 700px) {
+      #video-page {
+        flex-direction: row;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 60px 40px;
+        gap: 48px;
+      }
+
+      .player-wrap {
+        max-width: 320px;
+        flex-shrink: 0;
+      }
+
+      .side-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        max-width: 280px;
+        padding-top: 8px;
+      }
+
+      .success-line {
+        text-align: left;
+        margin-bottom: 0;
+        font-size: 18px;
+      }
+
+      .back-link {
+        align-self: flex-start;
+      }
+    }
+
+    /* Mobile: stack everything */
+    @media (max-width: 699px) {
+      .player-wrap {
+        max-width: 340px;
+      }
+
+      .side-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        max-width: 340px;
+      }
+
+      #video-page {
+        gap: 12px;
+      }
+    }
+
+    .side-receipt {
+      display: none !important;
+    }
+
+    .whatsapp-btn {
+      width: 100%;
+      background: #25D366;
+      color: #fff;
+      border: none;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 16px;
+      letter-spacing: 2px;
+      padding: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.2s;
+    }
+
+    .whatsapp-btn:hover {
+      opacity: 0.9;
+    }
+
+    /* ── PHOTO UPLOAD ────────────────────────────────── */
+    .photo-upload-group {
+      margin-bottom: 32px;
+    }
+
+    .photo-upload-trigger {
+      width: 100%;
+      border: 1.5px dashed rgba(194, 24, 91, 0.4);
+      background: var(--pale);
+      color: var(--brown);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      padding: 18px;
+      cursor: pointer;
+      text-align: center;
+      border-radius: 0;
+      transition: border-color 0.2s, background 0.2s;
+      display: block;
+    }
+
+    .photo-upload-trigger:hover {
+      border-color: var(--maroon);
+      background: #FCE4EC;
+    }
+
+    .photo-preview-wrap {
+      display: none;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .photo-preview-wrap img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--maroon);
+      box-shadow: 0 4px 16px rgba(194, 24, 91, 0.25);
+    }
+
+    .photo-preview-name {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: var(--brown);
+      margin-top: 6px;
+      opacity: 0.7;
+    }
+
+    /* ── END PHOTO OVERLAY ───────────────────────────── */
+    .end-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      background: linear-gradient(160deg, #4A0020 0%, #880E4F 45%, #C2185B 100%);
+      z-index: 20;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .end-overlay.visible {
+      display: flex;
+    }
+
+    /* Full-screen portrait photo */
+    .end-bg-photo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      display: none;
+    }
+
+    /* Dark gradient scrim over photo for text readability */
+    .end-scrim {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(50, 0, 20, 0.92) 0%, rgba(50, 0, 20, 0.55) 40%, rgba(0, 0, 0, 0.08) 100%);
+      z-index: 1;
+      display: none;
+    }
+
+    /* No-photo placeholder centred */
+    .end-photo-placeholder {
+      position: absolute;
+      top: 38%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 80px;
+      z-index: 2;
+    }
+
+    /* Content sits at bottom above scrim */
+    .end-overlay-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      padding: 0 24px 28px;
+    }
+
+    .end-heart {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .end-wish {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(248, 187, 208, 0.85);
+      margin-bottom: 4px;
+    }
+
+    .end-name-text {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 28px;
+      color: #FFF5F7;
+      margin-bottom: 14px;
+      line-height: 1.2;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .end-share-btn {
+      background: #25D366;
+      color: #fff;
+      border: none;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px;
+      letter-spacing: 2px;
+      padding: 12px 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+      transition: opacity 0.2s;
+    }
+
+    .end-share-btn:hover {
+      opacity: 0.9;
+    }
+
+    .end-replay-btn {
+      background: transparent;
+      border: 1.5px solid rgba(248, 187, 208, 0.5);
+      color: rgba(248, 187, 208, 0.9);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: 2px;
+      padding: 9px 22px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .end-replay-btn:hover {
+      background: rgba(248, 187, 208, 0.1);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══ LANDING ════════════════════════════════════ -->
+  <div id="landing" class="page active">
+    <div class="niat-badge">NIAT India ✦ Mother's Day</div>
+    <h1 class="headline">Mom has been doing things for you all your life.<br>Today, let's count them.</h1>
+    <p class="subline">A 15-second video. A lifetime of love.<br>Numbers she never kept track of — you do it for her.
+    </p>
+    <button class="cta-btn" onclick="showPage('form-page')">Make Your Mom's Bill</button>
+    <div
+      style="text-align:center; padding:66px 4px 10px; font-size:11px; color:rgba(61,26,36,0.4); font-family:'IBM Plex Mono',monospace; letter-spacing:0.5px;">
+      © 2026 NIAT India · All rights reserved · Made with 💗
+    </div>
+  </div>
+
+  <!-- ══ FORM ═══════════════════════════════════════ -->
+  <div id="form-page" class="page">
+    <div class="form-inner">
+      <div class="form-title">Tell us about her.</div>
+      <div class="form-subtitle">60 seconds · free · made with love</div>
+
+      <div class="field-group">
+        <label class="field-label" for="yourName">Your Name</label>
+        <input class="field-input" id="yourName" type="text" placeholder="e.g. Arjun" maxlength="24"
+          oninput="updatePreview()">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="yourAge">Your Age</label>
+        <input class="field-input" id="yourAge" type="number" placeholder="e.g. 19" min="1" max="60"
+          oninput="updatePreview()">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="momName">Mom's Name</label>
+        <input class="field-input" id="momName" type="text" placeholder="e.g. Sunita" maxlength="24"
+          oninput="updatePreview()">
+      </div>
+
+      <div class="toggles-section">
+        <span class="toggles-label">What did she do for you?</span>
+        <div class="toggle-row">
+          <div class="toggle-text">
+            <div class="toggle-label-text">Packed tiffin / lunch</div>
+            <div class="toggle-sub">Home-cooked, every school day</div>
+          </div>
+          <button class="toggle on" id="t-tiffin" onclick="toggleSwitch(this)"></button>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-text">
+            <div class="toggle-label-text">Asked "khaana khaya?"</div>
+            <div class="toggle-sub">Multiple times a day, every day</div>
+          </div>
+          <button class="toggle on" id="t-khaya" onclick="toggleSwitch(this)"></button>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-text">
+            <div class="toggle-label-text">Skipped her meal for you</div>
+            <div class="toggle-sub">"I'm not hungry, you eat"</div>
+          </div>
+          <button class="toggle on" id="t-hungry" onclick="toggleSwitch(this)"></button>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-text">
+            <div class="toggle-label-text">Stayed up when you were sick</div>
+            <div class="toggle-sub">Sleepless nights watching over you</div>
+          </div>
+          <button class="toggle on" id="t-sick" onclick="toggleSwitch(this)"></button>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-text">
+            <div class="toggle-label-text">Prayed for you every morning</div>
+            <div class="toggle-sub">Without fail, without asking</div>
+          </div>
+          <button class="toggle on" id="t-pray" onclick="toggleSwitch(this)"></button>
+        </div>
+      </div>
+
+      <div class="receipt-preview" id="previewBox">
+        <strong>RECEIPT PREVIEW</strong><br>
+        ─────────────────────────<br>
+        Enter your details above to see the numbers...
+      </div>
+
+      <!-- Mom's photo upload -->
+      <div class="photo-upload-group">
+        <span class="field-label">Add Mom's photo (optional)</span>
+        <input type="file" id="momPhotoInput" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
+        <button class="photo-upload-trigger" onclick="document.getElementById('momPhotoInput').click()">📷 &nbsp;Upload
+          her photo — best moments</button>
+        <div class="photo-preview-wrap" id="photoPreviewWrap">
+          <img id="photoPreviewImg" src="" alt="Mom's preview">
+          <div class="photo-preview-name">Photo added ✓</div>
+        </div>
+      </div>
+
+      <button class="generate-btn" onclick="generateVideo()">Generate Mom's Bill →</button>
+      <div
+        style="text-align:center; padding:6px 0 10px; font-size:11px; color:rgba(61,26,36,0.4); font-family:'IBM Plex Mono',monospace; letter-spacing:0.5px;">
+        © 2026 NIAT India · All rights reserved · Made with 💗
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LOADING ════════════════════════════════════ -->
+  <div id="loading-page" class="page">
+    <div class="loading-name" id="loadingName">Calculating her lifetime of love...</div>
+    <div class="loading-sub">Making something beautiful · please wait</div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- ══ VIDEO PAGE ══════════════════════════════════ -->
+  <div id="video-page" class="page">
+
+    <!-- Mobile: success line appears above player -->
+    <div class="side-panel" id="sidePanel">
+      <div class="success-line">Done. Now go make her cry happy tears.💗</div>
+      <div class="side-receipt" id="sideReceipt">Loading receipt...</div>
+      <button class="whatsapp-btn" onclick="shareWhatsApp()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+          <path
+            d="M12 0C5.373 0 0 5.373 0 12c0 2.126.558 4.121 1.532 5.854L.057 23.543a.5.5 0 00.601.601l5.689-1.475A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.797 9.797 0 01-5.001-1.372l-.36-.213-3.724.966.99-3.607-.235-.371A9.8 9.8 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z" />
+        </svg>
+        Share on WhatsApp
+      </button>
+      <button class="back-link" onclick="showPage('landing')">← Make another one</button>
+    </div>
+
+    <!-- The video player -->
+    <div class="player-wrap">
+      <div class="canvas-container">
+        <canvas id="mainCanvas"></canvas>
+        <!-- Play/Pause overlay -->
+        <div class="play-overlay visible" id="playOverlay" onclick="togglePlay()">
+          <svg id="overlayIcon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="32" cy="32" r="30" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" />
+            <polygon points="26,20 50,32 26,44" fill="white" />
+          </svg>
+        </div>
+        <!-- End photo overlay (shown after video finishes) -->
+        <div class="end-overlay" id="endOverlay">
+          <!-- Full-screen portrait photo background -->
+          <img class="end-bg-photo" id="endBgPhoto" src="" alt="Mom">
+          <!-- Dark scrim over photo -->
+          <div class="end-scrim" id="endScrim"></div>
+          <!-- No-photo fallback -->
+          <div id="endPhotoPlaceholder" class="end-photo-placeholder">💐</div>
+          <!-- Text + buttons at bottom -->
+          <div class="end-overlay-content">
+            <div class="end-heart">💗</div>
+            <div class="end-wish">Happy Mother's Day</div>
+            <div class="end-name-text" id="endMomNameText">Mom</div>
+            <button class="end-share-btn" id="endShareBtn" onclick="shareWhatsApp()" disabled
+              style="opacity:0.55;cursor:not-allowed">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                  d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+                <path
+                  d="M12 0C5.373 0 0 5.373 0 12c0 2.126.558 4.121 1.532 5.854L.057 23.543a.5.5 0 00.601.601l5.689-1.475A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.797 9.797 0 01-5.001-1.372l-.36-.213-3.724.966.99-3.607-.235-.371A9.8 9.8 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z" />
+              </svg>
+              <span id="endShareLabel">⏳ Preparing video...</span>
+            </button>
+            <button class="end-replay-btn" onclick="replayVideo()">↺ Watch Again</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls bar -->
+      <div class="controls-bar">
+        <div class="scrubber-row">
+          <span class="time-label" id="timeLabel">0:00</span>
+          <div class="scrubber" id="scrubber" onclick="scrubClick(event)">
+            <div class="scrubber-fill" id="scrubberFill"></div>
+            <div class="scrubber-thumb" id="scrubberThumb"></div>
+          </div>
+          <span class="time-label">0:30</span>
+        </div>
+        <div class="btn-row">
+          <button class="ctrl-btn primary" onclick="togglePlay()" id="playPauseBtn">▶ PLAY</button>
+          <button class="ctrl-btn" onclick="replayVideo()">↺ REPLAY</button>
+          <button class="ctrl-btn" onclick="downloadVideo()">⬇ DOWNLOAD</button>
+          <button class="ctrl-btn" onclick="shareVideo()">↗ SHARE</button>
+        </div>
+      </div>
+
+      <!-- Frame dots -->
+      <div class="frame-dots" id="frameDots">
+        <div class="dot active"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── STATE ──────────────────────────────────────────
+    let calcData = {};
+    let animFrame = null;
+    let videoStartTime = null;
+    let pausedAt = 0;
+    let isPlaying = false;
+    let isDone = false;
+    const DURATION = 44000;
+
+    const FRAME_TIMES = [0, 4000, 7000, 11000, 15000, 19000, 23000, 27000, 31000, 38000, 44000];
+
+    // ── PHOTO & RECORDING ──────────────────────────────
+    let momPhotoURL = null;
+    let momPhotoImg = null; // Pre-loaded Image for canvas drawing
+    let recordedChunks = [];
+    let mediaRecorder = null;
+    let recordedBlob = null;
+
+    // ── AUDIO (none for now) ──
+    function startMusic() { }
+    function pauseMusic() { }
+    function stopMusic() { }
+
+    function handlePhotoUpload(e) {
+      const file = e.target.files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        momPhotoURL = ev.target.result;
+        document.getElementById('photoPreviewWrap').style.display = 'block';
+        document.getElementById('photoPreviewImg').src = momPhotoURL;
+        // Pre-load as Image for canvas drawing in Frame 7
+        momPhotoImg = new Image();
+        momPhotoImg.src = momPhotoURL;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function startRecording() {
+      const canvas = document.getElementById('mainCanvas');
+      if (!canvas.captureStream) return;
+      // Reset share button to 'preparing' state
+      const btn = document.getElementById('endShareBtn');
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.55'; btn.style.cursor = 'not-allowed'; }
+      const lbl = document.getElementById('endShareLabel');
+      if (lbl) lbl.textContent = '⏳ Preparing video...';
+      try {
+        recordedChunks = []; recordedBlob = null;
+        const stream = canvas.captureStream(30);
+        // Prefer MP4 (mobile-friendly), fall back to WebM
+        const mime = [
+          'video/mp4',
+          'video/mp4;codecs=avc1',
+          'video/webm;codecs=vp9',
+          'video/webm;codecs=vp8',
+          'video/webm'
+        ].find(t => { try { return MediaRecorder.isTypeSupported(t); } catch (_) { return false; } }) || '';
+        mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+        mediaRecorder.ondataavailable = ev => { if (ev.data.size > 0) recordedChunks.push(ev.data); };
+        mediaRecorder.onstop = () => {
+          const actualMime = mediaRecorder.mimeType || 'video/webm';
+          recordedBlob = new Blob(recordedChunks, { type: actualMime });
+          // Enable share button now that video is ready
+          const b = document.getElementById('endShareBtn');
+          const l = document.getElementById('endShareLabel');
+          if (b) { b.disabled = false; b.style.opacity = '1'; b.style.cursor = 'pointer'; }
+          if (l) l.textContent = 'Share Video on WhatsApp';
+        };
+        mediaRecorder.start(200);
+      } catch (err) {
+        console.warn('Recording unavailable:', err);
+        const b = document.getElementById('endShareBtn');
+        const l = document.getElementById('endShareLabel');
+        if (b) { b.disabled = false; b.style.opacity = '1'; b.style.cursor = 'pointer'; }
+        if (l) l.textContent = 'Share on WhatsApp';
+      }
+    }
+
+    function pauseRecording() {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.pause();
+      }
+    }
+
+    function resumeRecording() {
+      if (mediaRecorder && mediaRecorder.state === 'paused') {
+        mediaRecorder.resume();
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    }
+
+    // ── NAVIGATION ─────────────────────────────────────
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    // ── TOGGLES ────────────────────────────────────────
+    function toggleSwitch(el) { el.classList.toggle('on'); updatePreview(); }
+    function isOn(id) { return document.getElementById(id).classList.contains('on'); }
+
+    // ── CALCULATIONS ───────────────────────────────────
+    function calculate(name, age, yourName) {
+      const totalDays = age * 365;
+      // "Did you eat?" ~1.65x per day
+      const askedEat   = Math.round(totalDays * 1.647);
+      // Meals made with love ~1.5x per day
+      const mealsLove  = Math.round(totalDays * 1.5);
+      // Mornings she woke up to make your day easier (school + routine)
+      const mornings   = Math.min(age, 18) * 240 + Math.max(0, age - 18) * 180;
+      return { name, yourName, age, totalDays, askedEat, mealsLove, mornings };
+    }
+
+    function updatePreview() {
+      // Preview is hidden, no need to update
+    }
+
+    // ── GENERATE ───────────────────────────────────────
+    function generateVideo() {
+      const yourName = document.getElementById('yourName').value.trim();
+      const name = document.getElementById('momName').value.trim();
+      const age = parseInt(document.getElementById('yourAge').value);
+      if (!yourName) { alert('Please enter your name 💗'); return; }
+      if (!age || age < 1 || age > 60) { alert('Please enter a valid age.'); return; }
+      if (!name) { alert("Please enter your mom's name 💗"); return; }
+      if (!name) { alert("Please enter your mom's name 💗"); return; }
+
+      calcData = calculate(name, age, yourName);
+
+      // Update side receipt (simple summary)
+      const d = calcData;
+      document.getElementById('sideReceipt').innerHTML =
+        `<strong>MOM UNWRAPPED · ${d.name.toUpperCase()}</strong><br>` +
+        `──────────────────<br>` +
+        `Days as your mom: ${d.totalDays.toLocaleString('en-IN')}<br>` +
+        `"Did you eat?": ${d.askedEat.toLocaleString('en-IN')}<br>` +
+        `Meals of love: ${d.mealsLove.toLocaleString('en-IN')}<br>` +
+        `Mornings for you: ${d.mornings.toLocaleString('en-IN')}`;
+
+      // Loading
+      showPage('loading-page');
+      document.getElementById('loadingName').textContent = `Calculating ${name}'s lifetime of love...`;
+      document.getElementById('progressFill').style.width = '0%';
+
+      let prog = 0;
+      const iv = setInterval(() => {
+        prog += 1.8 + Math.random() * 2.5;
+        if (prog >= 100) { prog = 100; clearInterval(iv); }
+        document.getElementById('progressFill').style.width = prog + '%';
+      }, 55);
+
+      setTimeout(() => {
+        showPage('video-page');
+        initCanvas();
+        // Don't auto-play — show play button
+        drawFrame(null, 0); // render first frame
+        showPlayOverlay(true);
+      }, 3200);
+    }
+
+    // ── CANVAS SETUP ───────────────────────────────────
+    function initCanvas() {
+      const canvas = document.getElementById('mainCanvas');
+      // internal resolution: 9:16 at 540×960 for sharpness
+      canvas.width = 540;
+      canvas.height = 960;
+      pausedAt = 0;
+      isDone = false;
+      isPlaying = false;
+      updatePlayBtn();
+    }
+
+    // ── PLAYBACK ───────────────────────────────────────
+    function togglePlay() {
+      if (isDone) { replayVideo(); return; }
+      if (isPlaying) { pauseVideo(); } else { playVideo(); }
+    }
+
+    function playVideo() {
+      isPlaying = true;
+      isDone = false;
+      hideEndOverlay();
+      showPlayOverlay(false);
+      videoStartTime = performance.now() - pausedAt;
+      updatePlayBtn();
+      // Only start fresh recording if playing from the beginning
+      if (pausedAt === 0) {
+        startRecording();
+      } else {
+        resumeRecording();
+      }
+      startMusic();
+      tick();
+    }
+
+    function pauseVideo() {
+      isPlaying = false;
+      pausedAt = performance.now() - videoStartTime;
+      cancelAnimationFrame(animFrame);
+      showPlayOverlay(true, false);
+      updatePlayBtn();
+      pauseRecording();
+      pauseMusic();
+    }
+
+    function replayVideo() {
+      cancelAnimationFrame(animFrame);
+      pausedAt = 0;
+      isDone = false;
+      isPlaying = true;
+      hideEndOverlay();
+      showPlayOverlay(false);
+      videoStartTime = performance.now();
+      updatePlayBtn();
+      startRecording(); // Fresh recording for replay
+      startMusic();
+      tick();
+    }
+
+    function tick() {
+      const elapsed = performance.now() - videoStartTime;
+      const t = Math.min(elapsed, DURATION);
+      drawFrame(document.getElementById('mainCanvas').getContext('2d'), t);
+      updateScrubber(t);
+      updateDots(t);
+      if (t < DURATION) {
+        animFrame = requestAnimationFrame(tick);
+      } else {
+        isDone = true;
+        isPlaying = false;
+        stopRecording();
+        stopMusic();
+        showEndOverlay();
+        updatePlayBtn();
+      }
+    }
+
+    function showPlayOverlay(show, ended = false) {
+      const overlay = document.getElementById('playOverlay');
+      const icon = document.getElementById('overlayIcon');
+      overlay.classList.toggle('visible', show);
+      if (show && !ended) {
+        icon.innerHTML = `<circle cx="32" cy="32" r="30" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+      <polygon points="26,20 50,32 26,44" fill="white"/>`;
+      }
+    }
+
+    function showEndOverlay() {
+      showPlayOverlay(false);
+      const bgPhoto = document.getElementById('endBgPhoto');
+      const scrim = document.getElementById('endScrim');
+      const ph = document.getElementById('endPhotoPlaceholder');
+      const overlay = document.getElementById('endOverlay');
+      if (momPhotoURL) {
+        bgPhoto.src = momPhotoURL;
+        bgPhoto.style.display = 'block';
+        scrim.style.display = 'block';
+        ph.style.display = 'none';
+        overlay.style.background = 'transparent';
+      } else {
+        bgPhoto.style.display = 'none';
+        scrim.style.display = 'none';
+        ph.style.display = 'block';
+        overlay.style.background = 'linear-gradient(160deg,#4A0020 0%,#880E4F 45%,#C2185B 100%)';
+      }
+      document.getElementById('endMomNameText').textContent = calcData.name || 'Mom';
+      overlay.classList.add('visible');
+    }
+
+    function hideEndOverlay() {
+      document.getElementById('endOverlay').classList.remove('visible');
+    }
+
+    function updatePlayBtn() {
+      const btn = document.getElementById('playPauseBtn');
+      if (isDone) { btn.textContent = '↺ REPLAY'; }
+      else if (isPlaying) { btn.textContent = '⏸ PAUSE'; }
+      else { btn.textContent = '▶ PLAY'; }
+    }
+
+    // ── SCRUBBER ───────────────────────────────────────
+    function updateScrubber(t) {
+      const pct = (t / DURATION) * 100;
+      document.getElementById('scrubberFill').style.width = pct + '%';
+      document.getElementById('scrubberThumb').style.left = pct + '%';
+      const sec = Math.floor(t / 1000);
+      document.getElementById('timeLabel').textContent = `0:${String(sec).padStart(2, '0')}`;
+    }
+
+    function scrubClick(e) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      pausedAt = pct * DURATION;
+      isDone = false;
+      if (isPlaying) {
+        videoStartTime = performance.now() - pausedAt;
+      } else {
+        const canvas = document.getElementById('mainCanvas');
+        drawFrame(canvas.getContext('2d'), pausedAt);
+        updateScrubber(pausedAt);
+        updateDots(pausedAt);
+      }
+    }
+
+    // ── FRAME DOTS ─────────────────────────────────────
+    function updateDots(t) {
+      const dots = document.querySelectorAll('.dot');
+      let fi = 0;
+      for (let i = 0; i < FRAME_TIMES.length - 1; i++) {
+        if (t >= FRAME_TIMES[i]) fi = i;
+      }
+      dots.forEach((d, i) => d.classList.toggle('active', i === fi));
+    }
+
+    // ── SHARE ──────────────────────────────────────────
+    function shareVideo() {
+      shareWhatsApp();
+    }
+
+    async function shareWhatsApp() {
+      // If blob not yet ready (recording just stopped, onstop pending), wait
+      if (!recordedBlob && mediaRecorder && mediaRecorder.state === 'inactive' && recordedChunks.length > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      }
+
+      if (!recordedBlob) {
+        alert('Video is still being prepared. Please wait a moment and try again.');
+        return;
+      }
+
+      const ext = 'mp4'; // Always use .mp4 for mobile compatibility
+      const fileName = `moms_bill_${(calcData.name || 'mom').replace(/\s+/g, '_')}.${ext}`;
+      // Wrap blob as video/mp4 so mobile players recognize it
+      const mobileBlob = new Blob([recordedBlob], { type: 'video/mp4' });
+      const file = new File([mobileBlob], fileName, { type: 'video/mp4' });
+
+      // Try Web Share API with the video file (works on mobile Chrome, Safari etc.)
+      if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `Mom's Bill 💗`,
+            text: '💗 Happy Mother\'s Day!'
+          });
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return; // user cancelled
+          console.warn('Web Share failed, downloading instead:', err);
+        }
+      }
+
+      // Fallback: download the video so user can share it manually
+      downloadVideo();
+    }
+
+    function downloadVideo() {
+      if (!recordedBlob) { alert('Video is still being prepared. Please wait a moment and try again.'); return; }
+      const fileName = `moms_bill_${(calcData.name||'mom').replace(/\s+/g,'_')}.mp4`;
+      const mobileBlob = new Blob([recordedBlob], { type: 'video/mp4' });
+      const url = URL.createObjectURL(mobileBlob);
+      const a = document.createElement('a'); a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      alert('Video downloaded! Open WhatsApp → attach the video from your Downloads folder.');
+    }
+
+    // ── DRAW ENGINE HELPERS ───────────────────────────
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function clamp(v) { return Math.max(0, Math.min(1, v)); }
+    function seg(t, s, e) { return clamp((t - s) / (e - s)); }
+    function countUp(to, p) { return Math.floor(lerp(0, to, easeOut(p))); }
+    function typewrite(ctx, text, progress, cx, cy, font, color, maxW, lineH) {
+      ctx.font = font; ctx.fillStyle = color; ctx.textAlign = 'center';
+      const chars = Math.floor(text.length * progress);
+      const words = text.slice(0, chars).split(' ');
+      let line = '', lines = [], lh = lineH || parseInt(font) * 1.45;
+      for (let w of words) {
+        const test = line + w + ' ';
+        if (ctx.measureText(test).width > maxW && line) { lines.push(line.trim()); line = w + ' '; }
+        else { line = test; }
+      }
+      if (line.trim()) lines.push(line.trim());
+      const startY = cy - (lines.length - 1) * lh / 2;
+      lines.forEach((l, i) => ctx.fillText(l, cx, startY + i * lh));
+    }
+
+    function drawReceiptBg(ctx, W, H, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      // Soft blush gradient background
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#FFF5F7');
+      bg.addColorStop(1, '#FCE4EC');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(194,24,91,0.06)';
+      ctx.lineWidth = 1;
+      for (let y = 0; y < H; y += 20) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawFrame(ctx, t) {
+      if (!ctx) ctx = document.getElementById('mainCanvas').getContext('2d');
+      const W = 540, H = 960, n = calcData;
+      const F = [[0,4000],[4000,7000],[7000,11000],[11000,15000],[15000,19000],[19000,23000],[23000,27000],[27000,31000],[31000,38000],[38000,44000]];
+      const fp    = i => seg(t, F[i][0], F[i][1]);
+      const animP = i => Math.min(1, fp(i) * (F[i][1]-F[i][0]) / 1500);
+      const inF   = i => t >= F[i][0] && t < F[i][1];
+      ctx.clearRect(0, 0, W, H);
+
+      function darkBg(a,b){ const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,a); g.addColorStop(1,b); ctx.fillStyle=g; ctx.fillRect(0,0,W,H); }
+      function hline(y,c){ ctx.strokeStyle=c||'rgba(248,187,208,0.2)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(W/2-90,y); ctx.lineTo(W/2+90,y); ctx.stroke(); }
+
+      // ══ FRAME 0: Title — Mom, Unwrapped ══════════════
+      if (inF(0)) {
+        darkBg('#2A0012','#6A0038');
+        ctx.save(); ctx.globalAlpha=0.06; ctx.fillStyle='#F48FB1';
+        for(let i=0;i<5;i++){ ctx.beginPath(); ctx.ellipse(W/2,H/2,160+i*55,65+i*25,i*.6,0,Math.PI*2); ctx.fill(); }
+        ctx.restore();
+        const p=fp(0); ctx.save(); ctx.textAlign='center';
+        ctx.globalAlpha=easeOut(Math.min(1,p*3));
+        ctx.font='500 18px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.65)';
+        ctx.fillText('M O M ,  U N W R A P P E D',W/2,H/2-85);
+        ctx.globalAlpha=easeOut(Math.min(1,p*2.5));
+        ctx.font='italic 72px "Playfair Display"'; ctx.fillStyle='#FFF5F7';
+        ctx.fillText('Mom,',W/2,H/2);
+        ctx.fillText('Unwrapped.',W/2,H/2+82);
+        ctx.globalAlpha=easeOut(Math.min(1,(p-.5)*4));
+        ctx.font='11px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.45)';
+        ctx.fillText('— NIAT India —',W/2,H/2+162);
+        ctx.restore();
+      }
+
+      // ══ FRAME 1: Dedication ══════════════════════════
+      if (inF(1)) {
+        darkBg('#1E000E','#5C0030');
+        const p=fp(1); ctx.save(); ctx.textAlign='center';
+        ctx.globalAlpha=easeOut(Math.min(1,p*3));
+        typewrite(ctx,`This is for ${n.name}.`,Math.min(1,p*2.8),W/2,H/2-110,'500 32px "Playfair Display"','#FFF5F7',W-100,50);
+        if(p>0.3){
+          ctx.globalAlpha=easeOut(seg(p,0.3,1));
+          typewrite(ctx,'For my mother — for everything she did that was never meant to be counted.',Math.min(1,seg(p,0.3,1)*2),W/2,H/2+35,'italic 26px "Playfair Display"','rgba(248,187,208,0.85)',W-120,42);
+        }
+        ctx.restore();
+      }
+
+      // ══ FRAME 2: Days she's been your mother ═════════
+      if (inF(2)) {
+        drawReceiptBg(ctx,W,H,1);
+        const p=fp(2), ap=animP(2); ctx.save(); ctx.textAlign='center';
+        ctx.globalAlpha=easeOut(Math.min(1,p*3));
+        ctx.font='italic 24px "Playfair Display"'; ctx.fillStyle='#880E4F';
+        ctx.fillText("She's been my mother for",W/2,H/2-125);
+        ctx.font='130px "Bebas Neue"'; ctx.fillStyle='#C2185B';
+        ctx.fillText(countUp(n.totalDays,ap).toLocaleString('en-IN'),W/2,H/2+18);
+        ctx.font='500 32px "Playfair Display"'; ctx.fillStyle='#3D1A24';
+        ctx.fillText('days.',W/2,H/2+78);
+        ctx.restore();
+      }
+
+      // ══ FRAME 3: "Did you eat?" ═══════════════════════
+      if (inF(3)) {
+        drawReceiptBg(ctx,W,H,1);
+        const p=fp(3), ap=animP(3); ctx.save(); ctx.textAlign='center';
+        ctx.globalAlpha=easeOut(Math.min(1,p*3));
+        ctx.font='italic 22px "Playfair Display"'; ctx.fillStyle='#880E4F';
+        ctx.fillText('Times she asked',W/2,H/2-148);
+        ctx.font='italic 34px "Playfair Display"'; ctx.fillStyle='#3D1A24';
+        ctx.fillText('"Did you eat?"',W/2,H/2-100);
+        ctx.font='118px "Bebas Neue"'; ctx.fillStyle='#C2185B';
+        ctx.fillText(countUp(n.askedEat,ap).toLocaleString('en-IN'),W/2,H/2+30);
+        ctx.restore();
+      }
+
+      // ══ FRAME 4: Meals made with love ════════════════
+      if (inF(4)) {
+        drawReceiptBg(ctx,W,H,1);
+        const p=fp(4), ap=animP(4); ctx.save(); ctx.textAlign='center';
+        ctx.globalAlpha=easeOut(Math.min(1,p*3));
+        ctx.font='italic 24px "Playfair Display"'; ctx.fillStyle='#880E4F';
+        ctx.fillText('Meals she made with love',W/2,H/2-130);
+        ctx.font='120px "Bebas Neue"'; ctx.fillStyle='#C2185B';
+        ctx.fillText(countUp(n.mealsLove,ap).toLocaleString('en-IN'),W/2,H/2+20);
+        ctx.restore();
+      }
+
+      // ══ FRAME 5: Mornings ════════════════════════════
+      if (inF(5)) {
+        drawReceiptBg(ctx,W,H,1);
+        const p=fp(5), ap=animP(5); ctx.save(); ctx.textAlign='center';
+        ctx.globalAlpha=easeOut(Math.min(1,p*3));
+        typewrite(ctx,'Mornings she woke up to make my day easier',Math.min(1,ap*1.5),W/2,H/2-140,'italic 24px "Playfair Display"','#880E4F',W-100,38);
+        ctx.font='120px "Bebas Neue"'; ctx.fillStyle='#C2185B';
+        ctx.fillText(countUp(n.mornings,ap).toLocaleString('en-IN'),W/2,H/2+40);
+        ctx.restore();
+      }
+
+      // ══ FRAME 6: Every single call ══════════════════
+      if (inF(6)) {
+        drawReceiptBg(ctx,W,H,1);
+        const p=fp(6), ap=animP(6); ctx.save(); ctx.textAlign='center';
+        ctx.globalAlpha=easeOut(Math.min(1,p*3));
+        ctx.font='italic 24px "Playfair Display"'; ctx.fillStyle='#880E4F';
+        ctx.fillText('Times she answered my call',W/2,H/2-100);
+        ctx.font='500 36px "Playfair Display"'; ctx.fillStyle='#3D1A24';
+        if(ap > 0.5) {
+          ctx.globalAlpha=easeOut(Math.min(1, (ap - 0.5) * 2));
+          ctx.fillText('every single one',W/2,H/2+20);
+        }
+        ctx.restore();
+      }
+
+      // ══ FRAME 7: Times she chose love ═══════════════
+      if (inF(7)) {
+        drawReceiptBg(ctx,W,H,1);
+        const p=fp(7), ap=animP(7); ctx.save(); ctx.textAlign='center';
+        ctx.globalAlpha=easeOut(Math.min(1,p*3));
+        ctx.font='italic 24px "Playfair Display"'; ctx.fillStyle='#880E4F';
+        ctx.fillText('Times she chose love',W/2,H/2-100);
+        if(ap > 0.5) {
+          ctx.globalAlpha=easeOut(Math.min(1, (ap - 0.5) * 2));
+          ctx.font='130px "Playfair Display"'; ctx.fillStyle='rgba(136,14,79,0.8)';
+          ctx.fillText('∞',W/2,H/2+60);
+        }
+        ctx.restore();
+      }
+
+      // ══ FRAME 8: Poem — she didn't keep count ════════
+      if (inF(8)) {
+        darkBg('#1E000E','#540028');
+        const p=fp(8); ctx.save(); ctx.textAlign='center';
+        ctx.globalAlpha=easeOut(Math.min(1,p*2.5));
+        typewrite(ctx,`${n.totalDays.toLocaleString('en-IN')} days.`,Math.min(1,p*3),W/2,H/2-155,'italic 36px "Playfair Display"','#FFF5F7',W-100,52);
+        if(p>0.22){ ctx.globalAlpha=easeOut(seg(p,0.22,0.7)); typewrite(ctx,'And not one of them was about her.',Math.min(1,seg(p,0.22,0.8)*2),W/2,H/2-60,'italic 28px "Playfair Display"','rgba(248,187,208,0.9)',W-120,44); }
+        if(p>0.48){ ctx.globalAlpha=easeOut(seg(p,0.48,0.9)); typewrite(ctx,"She didn't keep count.",Math.min(1,seg(p,0.48,1)*2),W/2,H/2+50,'500 32px "Playfair Display"','#F8BBD0',W-120,48); }
+        if(p>0.7){  ctx.globalAlpha=easeOut(seg(p,0.7,1));  typewrite(ctx,'I did.',Math.min(1,seg(p,0.7,1)*3),W/2,H/2+122,'italic 42px "Playfair Display"','#FFF5F7',W-120,56); }
+        if(p>0.85){ ctx.globalAlpha=easeOut(seg(p,0.85,1)); ctx.font='italic 17px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.55)'; ctx.fillText(`\u2014 From your ${n.yourName||'child'}`,W/2,H/2+188); }
+        ctx.restore();
+      }
+
+      // ══ FRAME 9: End card — NIAT ══════════════════════
+      if (inF(9)) {
+        const p=fp(9); darkBg('#880E4F','#AD1457');
+        if(momPhotoImg&&momPhotoImg.complete&&momPhotoImg.naturalWidth>0){
+          ctx.save(); ctx.globalAlpha=easeOut(Math.min(1,p*2.5));
+          const iW=momPhotoImg.naturalWidth,iH=momPhotoImg.naturalHeight,sc=Math.max(W/iW,H/iH);
+          ctx.drawImage(momPhotoImg,(W-iW*sc)/2,(H-iH*sc)/2,iW*sc,iH*sc);
+          const scrim=ctx.createLinearGradient(0,0,0,H);
+          scrim.addColorStop(0,'rgba(40,0,20,0.3)'); scrim.addColorStop(0.5,'rgba(40,0,20,0.5)'); scrim.addColorStop(1,'rgba(40,0,20,0.92)');
+          ctx.fillStyle=scrim; ctx.fillRect(0,0,W,H); ctx.restore();
+        } else {
+          // Dynamic background design for fallback
+          ctx.save(); ctx.globalAlpha=easeOut(p)*0.35;
+          const hearts = ['💗', '✨', '🌸', '💖', '✨', '🌺'];
+          ctx.font = '28px serif';
+          for (let i = 0; i < 15; i++) {
+             // Slowly drift upwards based on time `t`
+             const hx = W * ((i * 0.17 + (t * 0.00002)) % 1);
+             const hy = H - ((H * 1.2) * ((i * 0.23 + (t * 0.00005)) % 1));
+             ctx.fillText(hearts[i % hearts.length], hx, hy);
+          }
+          ctx.restore();
+        }
+        ctx.save(); ctx.textAlign='center'; const cy=H/2;
+        ctx.globalAlpha=easeOut(Math.min(1,p*3));
+        ctx.font='12px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.6)';
+        ctx.fillText('\u2014 Issued at NIAT \u2014',W/2,cy-148);
+        hline(cy-130);
+        typewrite(ctx,'For mothers, who carried more than we ever asked them to notice.',Math.min(1,p*2),W/2,cy-58,'italic 26px "Playfair Display"','rgba(255,245,247,0.9)',W-120,40);
+        hline(cy+14);
+        ctx.globalAlpha=easeOut(seg(p,0.3,1));
+        ctx.font='500 22px "IBM Plex Mono"'; ctx.fillStyle='#F8BBD0';
+        ctx.fillText('#MomUnwrapped',W/2,cy+58);
+        ctx.font='13px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.65)';
+        ctx.fillText('niatindia.com/mom',W/2,cy+94);
+        ctx.globalAlpha=easeOut(seg(p,0.5,1));
+        ctx.font='68px "Bebas Neue"'; ctx.fillStyle='rgba(255,245,247,0.14)';
+        ctx.fillText('NIAT',W/2,cy+172);
+        ctx.font='10px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.3)';
+        ctx.fillText('\u00a9 2026 NIAT India',W/2,cy+210);
+        ctx.restore();
+      }
+    }
+
+    // ── INIT ───────────────────────────────────────────
+    updatePreview();
+  </script>
+</body>
+
+</html>
