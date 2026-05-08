@@ -199,13 +199,13 @@ const server = http.createServer(async (req, res) => {
   const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
 
   if (urlPath === '/api/track' && req.method === 'POST') return handleTrack(req, res);
-  if (urlPath === '/api/stats' && req.method === 'GET') {
+  if (urlPath === '/dashboard-stats/data' && req.method === 'GET') {
     if (!checkAdminAuth(req, res)) return;
     return handleStats(req, res);
   }
-  if (urlPath === '/admin' || urlPath === '/admin/') {
+  if (urlPath === '/dashboard-stats' || urlPath === '/dashboard-stats/') {
     if (!checkAdminAuth(req, res)) return;
-    return serveStatic(req, res, '/admin.html');
+    return serveStatic(req, res, '/dashboard-stats.html');
   }
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.writeHead(405); res.end('Method not allowed'); return;

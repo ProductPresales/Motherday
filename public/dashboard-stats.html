@@ -32,7 +32,7 @@
 <script>
 async function load() {
   try {
-    const r = await fetch('/api/stats', { cache: 'no-store' });
+    const r = await fetch('/dashboard-stats/data', { cache: 'no-store' });
     const d = await r.json();
     document.getElementById('env').textContent = d.env || 'unknown';
     document.getElementById('table').textContent = d.table ? '· ' + d.table : '';
