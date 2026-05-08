@@ -976,10 +976,65 @@
     let mediaRecorder = null;
     let recordedBlob = null;
 
-    // ── AUDIO (none for now) ──
-    function startMusic() { }
-    function pauseMusic() { }
-    function stopMusic() { }
+    // ── AUDIO ──────────────────────────────────────────
+    let bgmAudio = null;
+    let audioCtx = null;
+    let audioSourceNode = null;
+    let audioDestNode = null; // MediaStreamDestination for recording
+
+    function ensureAudio() {
+      if (!bgmAudio) {
+        bgmAudio = new Audio('/audio/bgm.mp3');
+        bgmAudio.loop = false;
+        bgmAudio.crossOrigin = 'anonymous';
+        bgmAudio.preload = 'auto';
+      }
+      return bgmAudio;
+    }
+
+    // Build (once) an AudioContext that pipes the audio element to BOTH
+    // the speakers AND a MediaStreamDestination we can feed to MediaRecorder.
+    function ensureAudioGraph() {
+      const a = ensureAudio();
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        audioCtx = new AC();
+        try {
+          audioSourceNode = audioCtx.createMediaElementSource(a);
+          audioDestNode = audioCtx.createMediaStreamDestination();
+          audioSourceNode.connect(audioCtx.destination); // speakers
+          audioSourceNode.connect(audioDestNode);        // recorder
+        } catch (err) {
+          console.warn('Audio graph setup failed:', err);
+          audioCtx = null;
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    function startMusic() {
+      const a = ensureAudio();
+      ensureAudioGraph();
+      try {
+        a.currentTime = (pausedAt > 0 ? pausedAt / 1000 : 0);
+      } catch (_) {}
+      const p = a.play();
+      if (p && typeof p.catch === 'function') p.catch(err => console.warn('Music play blocked:', err));
+    }
+
+    function pauseMusic() {
+      if (bgmAudio) { try { bgmAudio.pause(); } catch (_) {} }
+    }
+
+    function stopMusic() {
+      if (bgmAudio) {
+        try { bgmAudio.pause(); bgmAudio.currentTime = 0; } catch (_) {}
+      }
+    }
 
     function handlePhotoUpload(e) {
       const file = e.target.files[0];
@@ -1007,13 +1062,21 @@
       try {
         recordedChunks = []; recordedBlob = null;
         const stream = canvas.captureStream(30);
-        // Prefer MP4 (mobile-friendly), fall back to WebM
+        // Mix in the background music so the downloaded video has audio
+        try {
+          ensureAudioGraph();
+          if (audioDestNode && audioDestNode.stream) {
+            audioDestNode.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+          }
+        } catch (e) { console.warn('Could not attach audio track to recording:', e); }
+        // Prefer codecs that actually support audio+video together
         const mime = [
-          'video/mp4',
-          'video/mp4;codecs=avc1',
-          'video/webm;codecs=vp9',
-          'video/webm;codecs=vp8',
-          'video/webm'
+          'video/webm;codecs=vp9,opus',
+          'video/webm;codecs=vp8,opus',
+          'video/webm;codecs=opus',
+          'video/webm',
+          'video/mp4;codecs=avc1,mp4a.40.2',
+          'video/mp4'
         ].find(t => { try { return MediaRecorder.isTypeSupported(t); } catch (_) { return false; } }) || '';
         mediaRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
         mediaRecorder.ondataavailable = ev => { if (ev.data.size > 0) recordedChunks.push(ev.data); };
@@ -1293,11 +1356,12 @@
 
       if (window.MBAnalytics) window.MBAnalytics.track('share_whatsapp');
 
-      const ext = 'mp4'; // Always use .mp4 for mobile compatibility
+      const isMp4 = (recordedBlob.type || '').includes('mp4');
+      const ext = isMp4 ? 'mp4' : 'webm';
+      const mime = isMp4 ? 'video/mp4' : 'video/webm';
       const fileName = `moms_bill_${(calcData.name || 'mom').replace(/\s+/g, '_')}.${ext}`;
-      // Wrap blob as video/mp4 so mobile players recognize it
-      const mobileBlob = new Blob([recordedBlob], { type: 'video/mp4' });
-      const file = new File([mobileBlob], fileName, { type: 'video/mp4' });
+      const shareBlob = new Blob([recordedBlob], { type: mime });
+      const file = new File([shareBlob], fileName, { type: mime });
 
       // Try Web Share API with the video file (works on mobile Chrome, Safari etc.)
       if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
@@ -1321,9 +1385,12 @@
     function downloadVideo(skipTrack) {
       if (!recordedBlob) { alert('Video is still being prepared. Please wait a moment and try again.'); return; }
       if (!skipTrack && window.MBAnalytics) window.MBAnalytics.track('download');
-      const fileName = `moms_bill_${(calcData.name||'mom').replace(/\s+/g,'_')}.mp4`;
-      const mobileBlob = new Blob([recordedBlob], { type: 'video/mp4' });
-      const url = URL.createObjectURL(mobileBlob);
+      const isMp4 = (recordedBlob.type || '').includes('mp4');
+      const ext = isMp4 ? 'mp4' : 'webm';
+      const mime = isMp4 ? 'video/mp4' : 'video/webm';
+      const fileName = `moms_bill_${(calcData.name||'mom').replace(/\s+/g,'_')}.${ext}`;
+      const outBlob = new Blob([recordedBlob], { type: mime });
+      const url = URL.createObjectURL(outBlob);
       const a = document.createElement('a'); a.href = url; a.download = fileName;
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 5000);

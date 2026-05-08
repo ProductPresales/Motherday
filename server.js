@@ -21,6 +21,12 @@ const MIME = {
   '.jpeg': 'image/jpeg',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.m4a': 'audio/mp4',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
 };
 
 const ALLOWED_EVENTS = new Set(['visit', 'download', 'share_whatsapp']);
