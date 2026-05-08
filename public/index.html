@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mom's Bill · NIAT India</title>
+  <script src="/analytics.js" defer></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
 
@@ -1290,6 +1291,8 @@
         return;
       }
 
+      if (window.MBAnalytics) window.MBAnalytics.track('share_whatsapp');
+
       const ext = 'mp4'; // Always use .mp4 for mobile compatibility
       const fileName = `moms_bill_${(calcData.name || 'mom').replace(/\s+/g, '_')}.${ext}`;
       // Wrap blob as video/mp4 so mobile players recognize it
@@ -1311,12 +1314,13 @@
         }
       }
 
-      // Fallback: download the video so user can share it manually
-      downloadVideo();
+      // Fallback: download the video so user can share it manually (don't double-count as download)
+      downloadVideo(true);
     }
 
-    function downloadVideo() {
+    function downloadVideo(skipTrack) {
       if (!recordedBlob) { alert('Video is still being prepared. Please wait a moment and try again.'); return; }
+      if (!skipTrack && window.MBAnalytics) window.MBAnalytics.track('download');
       const fileName = `moms_bill_${(calcData.name||'mom').replace(/\s+/g,'_')}.mp4`;
       const mobileBlob = new Blob([recordedBlob], { type: 'video/mp4' });
       const url = URL.createObjectURL(mobileBlob);

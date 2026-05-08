@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Analytics · Mom's Bill</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; background: #FFF5F7; color: #3D1A24; padding: 32px; max-width: 720px; margin: 0 auto; }
+  h1 { color: #C2185B; margin-bottom: 4px; }
+  .env { display: inline-block; padding: 4px 10px; border-radius: 12px; background: #F8BBD0; color: #880E4F; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 24px; }
+  .card { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 2px 12px rgba(194,24,91,0.08); }
+  .card h3 { font-size: 12px; text-transform: uppercase; color: #AD5E78; letter-spacing: 0.08em; margin: 0 0 8px; font-weight: 600; }
+  .card .num { font-size: 36px; font-weight: 700; color: #880E4F; }
+  .card .sub { font-size: 12px; color: #AD5E78; margin-top: 4px; }
+  .meta { margin-top: 24px; font-size: 12px; color: #AD5E78; }
+  button { background: #C2185B; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  button:hover { background: #880E4F; }
+</style>
+</head>
+<body>
+  <h1>Mom's Bill · Analytics</h1>
+  <div><span class="env" id="env">loading…</span> <span id="table" style="font-size:12px; color:#AD5E78; margin-left:8px;"></span></div>
+  <div class="grid">
+    <div class="card"><h3>Visits (total)</h3><div class="num" id="visits">–</div><div class="sub" id="visits24">last 24h: –</div></div>
+    <div class="card"><h3>Unique Visitors</h3><div class="num" id="unique">–</div><div class="sub">by session</div></div>
+    <div class="card"><h3>Downloads</h3><div class="num" id="downloads">–</div><div class="sub" id="downloads24">last 24h: –</div></div>
+    <div class="card"><h3>WhatsApp Shares</h3><div class="num" id="shares">–</div><div class="sub" id="shares24">last 24h: –</div></div>
+  </div>
+  <p class="meta">Auto-refreshes every 15s · <button onclick="load()">Refresh now</button></p>
+
+<script>
+async function load() {
+  try {
+    const r = await fetch('/api/stats', { cache: 'no-store' });
+    const d = await r.json();
+    document.getElementById('env').textContent = d.env || 'unknown';
+    document.getElementById('table').textContent = d.table ? '· ' + d.table : '';
+    const t = d.totals || {}, t24 = d.last_24h || {};
+    document.getElementById('visits').textContent = t.visit || 0;
+    document.getElementById('downloads').textContent = t.download || 0;
+    document.getElementById('shares').textContent = t.share_whatsapp || 0;
+    document.getElementById('unique').textContent = d.unique_visitors || 0;
+    document.getElementById('visits24').textContent = 'last 24h: ' + (t24.visit || 0);
+    document.getElementById('downloads24').textContent = 'last 24h: ' + (t24.download || 0);
+    document.getElementById('shares24').textContent = 'last 24h: ' + (t24.share_whatsapp || 0);
+  } catch (e) {
+    console.error(e);
+  }
+}
+load();
+setInterval(load, 15000);
+</script>
+</body>
+</html>
