@@ -964,9 +964,9 @@
     let pausedAt = 0;
     let isPlaying = false;
     let isDone = false;
-    const DURATION = 30000;
+    const DURATION = 38000;
 
-    const FRAME_TIMES = [0, 4000, 7000, 11000, 15000, 19000, 23000, 27000, 30000];
+    const FRAME_TIMES = [0, 4000, 7000, 11000, 15000, 19000, 23000, 27000, 31000, 35000, 38000];
 
     // ── PHOTO & RECORDING ──────────────────────────────
     let momPhotoURL = null;
@@ -1387,7 +1387,7 @@
     function drawFrame(ctx, t) {
       if (!ctx) ctx = document.getElementById('mainCanvas').getContext('2d');
       const W = 540, H = 960, n = calcData;
-      const F = [[0,4000],[4000,7000],[7000,11000],[11000,15000],[15000,19000],[19000,23000],[23000,27000],[27000,30000]];
+      const F = [[0,4000],[4000,7000],[7000,11000],[11000,15000],[15000,19000],[19000,23000],[23000,27000],[27000,31000],[31000,35000],[35000,38000]];
       const fp    = i => seg(t, F[i][0], F[i][1]);
       const animP = i => Math.min(1, fp(i) * (F[i][1]-F[i][0]) / 1500);
       const inF   = i => t >= F[i][0] && t < F[i][1];
@@ -1469,32 +1469,51 @@
         ctx.restore();
       }
 
-      // ══ FRAME 5: Mornings + every single call + ∞ ═══
+      // ══ FRAME 5: Mornings ════════════════════════════
       if (inF(5)) {
         drawReceiptBg(ctx,W,H,1);
         const p=fp(5), ap=animP(5); ctx.save(); ctx.textAlign='center';
         ctx.globalAlpha=easeOut(Math.min(1,p*3));
-        typewrite(ctx,'Mornings she woke up to make my day easier',Math.min(1,ap*1.5),W/2,H/2-162,'italic 23px "Playfair Display"','#880E4F',W-100,38);
-        ctx.font='115px "Bebas Neue"'; ctx.fillStyle='#C2185B';
-        ctx.fillText(countUp(n.mornings,ap).toLocaleString('en-IN'),W/2,H/2+18);
-        if(ap>=1){
-          hline(H/2+56,'rgba(194,24,91,0.3)');
-          ctx.globalAlpha=easeOut(seg(p,0.55,1));
-          ctx.font='italic 20px "Playfair Display"'; ctx.fillStyle='#880E4F';
-          ctx.fillText('Times she answered my call',W/2,H/2+95);
-          ctx.font='500 27px "Playfair Display"'; ctx.fillStyle='#3D1A24';
-          ctx.fillText('every single one',W/2,H/2+135);
-          ctx.globalAlpha=easeOut(seg(p,0.75,1));
-          ctx.font='italic 20px "Playfair Display"'; ctx.fillStyle='rgba(136,14,79,0.7)';
-          ctx.fillText('Times she chose love, every single day — \u221e',W/2,H/2+190);
+        typewrite(ctx,'Mornings she woke up to make my day easier',Math.min(1,ap*1.5),W/2,H/2-140,'italic 24px "Playfair Display"','#880E4F',W-100,38);
+        ctx.font='120px "Bebas Neue"'; ctx.fillStyle='#C2185B';
+        ctx.fillText(countUp(n.mornings,ap).toLocaleString('en-IN'),W/2,H/2+40);
+        ctx.restore();
+      }
+
+      // ══ FRAME 6: Every single call ══════════════════
+      if (inF(6)) {
+        drawReceiptBg(ctx,W,H,1);
+        const p=fp(6), ap=animP(6); ctx.save(); ctx.textAlign='center';
+        ctx.globalAlpha=easeOut(Math.min(1,p*3));
+        ctx.font='italic 24px "Playfair Display"'; ctx.fillStyle='#880E4F';
+        ctx.fillText('Times she answered my call',W/2,H/2-100);
+        ctx.font='500 36px "Playfair Display"'; ctx.fillStyle='#3D1A24';
+        if(ap > 0.5) {
+          ctx.globalAlpha=easeOut(Math.min(1, (ap - 0.5) * 2));
+          ctx.fillText('every single one',W/2,H/2+20);
         }
         ctx.restore();
       }
 
-      // ══ FRAME 6: Poem — she didn't keep count ════════
-      if (inF(6)) {
+      // ══ FRAME 7: Times she chose love ═══════════════
+      if (inF(7)) {
+        drawReceiptBg(ctx,W,H,1);
+        const p=fp(7), ap=animP(7); ctx.save(); ctx.textAlign='center';
+        ctx.globalAlpha=easeOut(Math.min(1,p*3));
+        ctx.font='italic 24px "Playfair Display"'; ctx.fillStyle='#880E4F';
+        ctx.fillText('Times she chose love',W/2,H/2-100);
+        if(ap > 0.5) {
+          ctx.globalAlpha=easeOut(Math.min(1, (ap - 0.5) * 2));
+          ctx.font='130px "Playfair Display"'; ctx.fillStyle='rgba(136,14,79,0.8)';
+          ctx.fillText('∞',W/2,H/2+60);
+        }
+        ctx.restore();
+      }
+
+      // ══ FRAME 8: Poem — she didn't keep count ════════
+      if (inF(8)) {
         darkBg('#1E000E','#540028');
-        const p=fp(6); ctx.save(); ctx.textAlign='center';
+        const p=fp(8); ctx.save(); ctx.textAlign='center';
         ctx.globalAlpha=easeOut(Math.min(1,p*2.5));
         typewrite(ctx,`${n.totalDays.toLocaleString('en-IN')} days.`,Math.min(1,p*3),W/2,H/2-155,'italic 36px "Playfair Display"','#FFF5F7',W-100,52);
         if(p>0.22){ ctx.globalAlpha=easeOut(seg(p,0.22,0.7)); typewrite(ctx,'And not one of them was about her.',Math.min(1,seg(p,0.22,0.8)*2),W/2,H/2-60,'italic 28px "Playfair Display"','rgba(248,187,208,0.9)',W-120,44); }
@@ -1504,9 +1523,9 @@
         ctx.restore();
       }
 
-      // ══ FRAME 7: End card — NIAT ══════════════════════
-      if (inF(7)) {
-        const p=fp(7); darkBg('#880E4F','#AD1457');
+      // ══ FRAME 9: End card — NIAT ══════════════════════
+      if (inF(9)) {
+        const p=fp(9); darkBg('#880E4F','#AD1457');
         if(momPhotoImg&&momPhotoImg.complete&&momPhotoImg.naturalWidth>0){
           ctx.save(); ctx.globalAlpha=easeOut(Math.min(1,p*2.5));
           const iW=momPhotoImg.naturalWidth,iH=momPhotoImg.naturalHeight,sc=Math.max(W/iW,H/iH);
