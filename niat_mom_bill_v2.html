@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -2194,7 +2194,7 @@
         // ══ PERSISTENT NIAT LOGO OVERLAY ════════════════
         if (niatLogoImg && niatLogoImg.complete && niatLogoImg.naturalWidth > 0) {
           if (!whiteNiatLogo) {
-            const logoW = 80;
+            const logoW = 40;
             const logoH =
               niatLogoImg.naturalHeight * (logoW / niatLogoImg.naturalWidth);
             whiteNiatLogo = document.createElement("canvas");
@@ -2210,8 +2210,8 @@
           ctx.globalAlpha = 0.65;
           ctx.drawImage(
             whiteNiatLogo,
-            W - whiteNiatLogo.width - 24,
-            24,
+            W - whiteNiatLogo.width - 32,
+            32,
             whiteNiatLogo.width,
             whiteNiatLogo.height,
           );
