@@ -181,28 +181,60 @@ async function handleMuxAudio(req, res) {
     }
     await fs.promises.writeFile(inPath, buf);
 
-    await new Promise((resolve, reject) => {
-      const ff = spawn('ffmpeg', [
+    // Primary: re-encode to a universally-compatible MP4
+    // (baseline H.264 + yuv420p + stereo AAC 44.1 kHz, faststart, non-fragmented).
+    // This is what WhatsApp/iPhone reliably plays with audio — the iOS Safari
+    // MediaRecorder output (fragmented MP4, occasionally yuv444p) is the reason
+    // shared videos previously played silently on iPhone.
+    //
+    // Fallback: if libx264 isn't available on the host, fall back to stream-copy
+    // video (still re-encodes audio + remuxes to non-fragmented MP4), so the
+    // user always gets a video with audio.
+    function buildArgs(videoCodecArgs) {
+      return [
         '-y',
         '-i', inPath,
-        '-i', bgmPath,
+        '-stream_loop', '-1', '-i', bgmPath, // loop bgm to cover any video length
         '-map', '0:v:0',
         '-map', '1:a:0',
-        '-c:v', 'copy',
+        ...videoCodecArgs,
         '-c:a', 'aac',
         '-b:a', '160k',
+        '-ar', '44100',
+        '-ac', '2',
         '-shortest',
         '-movflags', '+faststart',
+        '-f', 'mp4',
         outPath,
-      ], { stdio: ['ignore', 'ignore', 'pipe'] });
-      let errOut = '';
-      ff.stderr.on('data', (d) => { errOut += d.toString(); });
-      ff.on('error', reject);
-      ff.on('close', (code) => {
-        if (code === 0) resolve();
-        else reject(new Error('ffmpeg exit ' + code + ': ' + errOut.slice(-500)));
+      ];
+    }
+
+    function runFfmpeg(args) {
+      return new Promise((resolve, reject) => {
+        const ff = spawn('ffmpeg', args, { stdio: ['ignore', 'ignore', 'pipe'] });
+        let errOut = '';
+        ff.stderr.on('data', (d) => { errOut += d.toString(); });
+        ff.on('error', reject);
+        ff.on('close', (code) => {
+          if (code === 0) resolve();
+          else reject(new Error('ffmpeg exit ' + code + ': ' + errOut.slice(-800)));
+        });
       });
-    });
+    }
+
+    try {
+      await runFfmpeg(buildArgs([
+        '-c:v', 'libx264',
+        '-preset', 'veryfast',
+        '-crf', '23',
+        '-pix_fmt', 'yuv420p',
+        '-profile:v', 'baseline',
+        '-level', '3.1',
+      ]));
+    } catch (encodeErr) {
+      console.warn('libx264 encode failed, falling back to copy:', encodeErr.message);
+      await runFfmpeg(buildArgs(['-c:v', 'copy']));
+    }
 
     const out = await fs.promises.readFile(outPath);
     res.writeHead(200, {
