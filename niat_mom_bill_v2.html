@@ -931,7 +931,7 @@
             <div class="scrubber-fill" id="scrubberFill"></div>
             <div class="scrubber-thumb" id="scrubberThumb"></div>
           </div>
-          <span class="time-label">0:30</span>
+          <span class="time-label">0:49</span>
         </div>
         <div class="btn-row">
           <button class="ctrl-btn primary" onclick="togglePlay()" id="playPauseBtn">▶ PLAY</button>
@@ -964,13 +964,14 @@
     let pausedAt = 0;
     let isPlaying = false;
     let isDone = false;
-    const DURATION = 44000;
+    const DURATION = 49000;
 
-    const FRAME_TIMES = [0, 4000, 7000, 11000, 15000, 19000, 23000, 27000, 31000, 38000, 44000];
+    const FRAME_TIMES = [0, 4000, 9000, 13000, 17000, 21000, 25000, 29000, 33000, 42000, 49000];
 
     // ── PHOTO & RECORDING ──────────────────────────────
     let momPhotoURL = null;
     let momPhotoImg = null; // Pre-loaded Image for canvas drawing
+    let niatLogoImg = null; // Pre-loaded Logo image
     let recordedChunks = [];
     let mediaRecorder = null;
     let recordedBlob = null;
@@ -1399,7 +1400,7 @@
     function drawFrame(ctx, t) {
       if (!ctx) ctx = document.getElementById('mainCanvas').getContext('2d');
       const W = 540, H = 960, n = calcData;
-      const F = [[0,4000],[4000,7000],[7000,11000],[11000,15000],[15000,19000],[19000,23000],[23000,27000],[27000,31000],[31000,38000],[38000,44000]];
+      const F = [[0,4000],[4000,9000],[9000,13000],[13000,17000],[17000,21000],[21000,25000],[25000,29000],[29000,33000],[33000,42000],[42000,49000]];
       const fp    = i => seg(t, F[i][0], F[i][1]);
       const animP = i => Math.min(1, fp(i) * (F[i][1]-F[i][0]) / 1500);
       const inF   = i => t >= F[i][0] && t < F[i][1];
@@ -1415,15 +1416,12 @@
         for(let i=0;i<5;i++){ ctx.beginPath(); ctx.ellipse(W/2,H/2,160+i*55,65+i*25,i*.6,0,Math.PI*2); ctx.fill(); }
         ctx.restore();
         const p=fp(0); ctx.save(); ctx.textAlign='center';
-        ctx.globalAlpha=easeOut(Math.min(1,p*3));
-        ctx.font='500 18px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.65)';
-        ctx.fillText('M O M ,  U N W R A P P E D',W/2,H/2-85);
         ctx.globalAlpha=easeOut(Math.min(1,p*2.5));
         ctx.font='italic 72px "Playfair Display"'; ctx.fillStyle='#FFF5F7';
         ctx.fillText('Mom,',W/2,H/2);
         ctx.fillText('Unwrapped.',W/2,H/2+82);
         ctx.globalAlpha=easeOut(Math.min(1,(p-.5)*4));
-        ctx.font='11px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.45)';
+        ctx.font='22px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.8)';
         ctx.fillText('— NIAT India —',W/2,H/2+162);
         ctx.restore();
       }
@@ -1498,12 +1496,9 @@
         const p=fp(6), ap=animP(6); ctx.save(); ctx.textAlign='center';
         ctx.globalAlpha=easeOut(Math.min(1,p*3));
         ctx.font='italic 24px "Playfair Display"'; ctx.fillStyle='#880E4F';
-        ctx.fillText('Times she answered my call',W/2,H/2-100);
+        ctx.fillText('Times she answered my call',W/2,H/2-40);
         ctx.font='500 36px "Playfair Display"'; ctx.fillStyle='#3D1A24';
-        if(ap > 0.5) {
-          ctx.globalAlpha=easeOut(Math.min(1, (ap - 0.5) * 2));
-          ctx.fillText('every single one',W/2,H/2+20);
-        }
+        ctx.fillText('every single one',W/2,H/2+20);
         ctx.restore();
       }
 
@@ -1536,11 +1531,12 @@
 
         ctx.save(); ctx.textAlign='center';
         ctx.globalAlpha=easeOut(Math.min(1,p*2.5));
-        typewrite(ctx,`${n.totalDays.toLocaleString('en-IN')} days.`,Math.min(1,p*3),W/2,H/2-155,'italic 36px "Playfair Display"','#FFF5F7',W-100,52);
+        typewrite(ctx,'Happy Mother\'s Day Ma',Math.min(1,p*3),W/2,H/2-200,'500 32px "Playfair Display"','#FFF5F7',W-100,52);
+        typewrite(ctx,`${n.totalDays.toLocaleString('en-IN')} days`,Math.min(1,p*3),W/2,H/2-140,'italic 36px "Playfair Display"','#FFF5F7',W-100,52);
         if(p>0.22){ ctx.globalAlpha=easeOut(seg(p,0.22,0.7)); typewrite(ctx,'And not one of them was about her.',Math.min(1,seg(p,0.22,0.8)*2),W/2,H/2-60,'italic 28px "Playfair Display"','rgba(248,187,208,0.9)',W-120,44); }
-        if(p>0.48){ ctx.globalAlpha=easeOut(seg(p,0.48,0.9)); typewrite(ctx,"She didn't keep count.",Math.min(1,seg(p,0.48,1)*2),W/2,H/2+50,'500 32px "Playfair Display"','#F8BBD0',W-120,48); }
-        if(p>0.7){  ctx.globalAlpha=easeOut(seg(p,0.7,1));  typewrite(ctx,'I did.',Math.min(1,seg(p,0.7,1)*3),W/2,H/2+122,'italic 42px "Playfair Display"','#FFF5F7',W-120,56); }
-        if(p>0.85){ ctx.globalAlpha=easeOut(seg(p,0.85,1)); ctx.font='italic 17px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.55)'; ctx.fillText(`\u2014 From your ${n.yourName||'child'}`,W/2,H/2+188); }
+        if(p>0.48){ ctx.globalAlpha=easeOut(seg(p,0.48,0.9)); typewrite(ctx,"She didn't keep count.",Math.min(1,seg(p,0.48,1)*2),W/2,H/2+20,'500 32px "Playfair Display"','#F8BBD0',W-120,48); }
+        if(p>0.7){  ctx.globalAlpha=easeOut(seg(p,0.7,1));  typewrite(ctx,'I did.',Math.min(1,seg(p,0.7,1)*3),W/2,H/2+100,'italic 42px "Playfair Display"','#FFF5F7',W-120,56); }
+        if(p>0.85){ ctx.globalAlpha=easeOut(seg(p,0.85,1)); ctx.font='italic 17px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.55)'; ctx.fillText(`\u2014 From your ${n.yourName||'child'}`,W/2,H/2+180); }
         ctx.restore();
       }
 
@@ -1571,8 +1567,13 @@
         ctx.font='13px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.65)';
         ctx.fillText('niatindia.com/mom',W/2,cy+94);
         ctx.globalAlpha=easeOut(seg(p,0.5,1));
-        ctx.font='68px "Bebas Neue"'; ctx.fillStyle='rgba(255,245,247,0.14)';
-        ctx.fillText('NIAT',W/2,cy+172);
+        // Placeholder for NIAT Logo
+        // if (niatLogoImg && niatLogoImg.complete) {
+        //   ctx.drawImage(niatLogoImg, W/2 - 50, cy + 120, 100, 50);
+        // } else {
+          ctx.font='68px "Bebas Neue"'; ctx.fillStyle='rgba(255,245,247,0.14)';
+          ctx.fillText('NIAT',W/2,cy+172);
+        // }
         ctx.font='10px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.3)';
         ctx.fillText('\u00a9 2026 NIAT India',W/2,cy+210);
         ctx.restore();
