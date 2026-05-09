@@ -2219,8 +2219,8 @@
             offCtx.fillRect(0, 0, logoW, logoH);
           }
 
-          // Frames 3-8 (index 3 to 8 in the F array)
-          const isMaroon = (t >= F[3][0] && t < F[8][1]);
+          // Receipt frames (index 2 to 7 in the F array) use maroon; others (dark backgrounds) use white
+          const isMaroon = (t >= F[2][0] && t < F[8][0]);
           const activeLogo = isMaroon ? maroonNiatLogo : whiteNiatLogo;
 
           ctx.save();
