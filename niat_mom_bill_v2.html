@@ -1193,10 +1193,21 @@
           // --- Web Audio API for background music ---
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           const bgAudioCtx = new AudioContext();
+          if (bgAudioCtx.state === "suspended") {
+            bgAudioCtx.resume();
+          }
+
           const bgAudioDest = bgAudioCtx.createMediaStreamDestination();
           const bgAudioEl = new Audio(AUDIO_FILE);
+          bgAudioEl.crossOrigin = "anonymous";
           const bgAudioSource = bgAudioCtx.createMediaElementSource(bgAudioEl);
           bgAudioSource.connect(bgAudioDest); // connect to stream, NOT speakers
+
+          // iOS Safari fix: wake up the audio context
+          const osc = bgAudioCtx.createOscillator();
+          osc.connect(bgAudioDest);
+          osc.start(0);
+          osc.stop(bgAudioCtx.currentTime + 0.1);
 
           const combinedStream = new MediaStream([
             ...canvasStream.getVideoTracks(),
@@ -1205,9 +1216,9 @@
 
           const mime =
             [
+              "video/mp4", // iOS Preference
               "video/mp4;codecs=avc1,mp4a.40.2",
               'video/mp4;codecs="avc1, mp4a.40.2"',
-              "video/mp4",
               "video/webm;codecs=vp9,opus",
               "video/webm;codecs=vp8,opus",
               "video/webm",
@@ -2081,17 +2092,23 @@
             niatLogoImg.naturalWidth > 0
           ) {
             ctx.save();
-            ctx.filter = "brightness(0) invert(1)";
             const logoW = 120;
             const logoH =
               niatLogoImg.naturalHeight * (logoW / niatLogoImg.naturalWidth);
-            ctx.drawImage(
-              niatLogoImg,
-              W / 2 - logoW / 2,
-              cy - 280,
-              logoW,
-              logoH,
-            );
+            const logoX = W / 2 - logoW / 2;
+            const logoY = cy - 280;
+
+            // iOS fallback for filter:brightness(0) invert(1)
+            const offCanvas = document.createElement("canvas");
+            offCanvas.width = logoW;
+            offCanvas.height = logoH;
+            const offCtx = offCanvas.getContext("2d");
+            offCtx.drawImage(niatLogoImg, 0, 0, logoW, logoH);
+            offCtx.globalCompositeOperation = "source-in";
+            offCtx.fillStyle = "#FFFFFF";
+            offCtx.fillRect(0, 0, logoW, logoH);
+
+            ctx.drawImage(offCanvas, logoX, logoY);
             ctx.restore();
           } else {
             ctx.font = '68px "Bebas Neue"';
