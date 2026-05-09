@@ -158,21 +158,13 @@ async function handleStats(req, res) {
     const unique = await pool.query(
       `SELECT COUNT(DISTINCT session_id)::int AS count FROM ${TABLE} WHERE event='visit' AND session_id IS NOT NULL`
     );
-    const last24 = await pool.query(
-      `SELECT event, COUNT(*)::int AS count FROM ${TABLE}
-       WHERE created_at > NOW() - INTERVAL '24 hours'
-       GROUP BY event`
-    );
     const totalsObj = {};
     for (const r of totals.rows) totalsObj[r.event] = r.count;
-    const last24Obj = {};
-    for (const r of last24.rows) last24Obj[r.event] = r.count;
     sendJson(res, 200, {
       env: ENV_NAME,
       table: TABLE,
       totals: totalsObj,
       unique_visitors: unique.rows[0]?.count || 0,
-      last_24h: last24Obj,
     });
   } catch (err) {
     console.error('stats error:', err.message);

@@ -22,12 +22,12 @@
   <h1>Mom's Bill · Analytics</h1>
   <div><span class="env" id="env">loading…</span> <span id="table" style="font-size:12px; color:#AD5E78; margin-left:8px;"></span></div>
   <div class="grid">
-    <div class="card"><h3>Users Visited Count</h3><div class="num" id="visits">–</div><div class="sub" id="visits24">last 24h: –</div></div>
+    <div class="card"><h3>Users Visited Count</h3><div class="num" id="visits">–</div><div class="sub">all time</div></div>
     <div class="card"><h3>Unique Users Count</h3><div class="num" id="unique">–</div><div class="sub">by session</div></div>
-    <div class="card"><h3>Downloaded Count</h3><div class="num" id="downloads">–</div><div class="sub" id="downloads24">last 24h: –</div></div>
-    <div class="card"><h3>Shared Through WhatsApp Count</h3><div class="num" id="shares">–</div><div class="sub" id="shares24">last 24h: –</div></div>
+    <div class="card"><h3>Downloaded Count</h3><div class="num" id="downloads">–</div><div class="sub">all time</div></div>
+    <div class="card"><h3>Shared Through WhatsApp Count</h3><div class="num" id="shares">–</div><div class="sub">all time</div></div>
   </div>
-  <p class="meta">Auto-refreshes every 15s · <button onclick="load()">Refresh now</button></p>
+  <p class="meta">All-time totals · Auto-refreshes every 15s · <button onclick="load()">Refresh now</button></p>
 
 <script>
 async function load() {
@@ -36,14 +36,11 @@ async function load() {
     const d = await r.json();
     document.getElementById('env').textContent = d.env || 'unknown';
     document.getElementById('table').textContent = d.table ? '· ' + d.table : '';
-    const t = d.totals || {}, t24 = d.last_24h || {};
+    const t = d.totals || {};
     document.getElementById('visits').textContent = t.visit || 0;
     document.getElementById('downloads').textContent = t.download || 0;
     document.getElementById('shares').textContent = t.share_whatsapp || 0;
     document.getElementById('unique').textContent = d.unique_visitors || 0;
-    document.getElementById('visits24').textContent = 'last 24h: ' + (t24.visit || 0);
-    document.getElementById('downloads24').textContent = 'last 24h: ' + (t24.download || 0);
-    document.getElementById('shares24').textContent = 'last 24h: ' + (t24.share_whatsapp || 0);
   } catch (e) {
     console.error(e);
   }
