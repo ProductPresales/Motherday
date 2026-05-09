@@ -976,7 +976,7 @@
       <div class="side-panel" id="sidePanel">
         <div class="success-line">Done. Now go make her cry happy tears.💗</div>
         <div class="side-receipt" id="sideReceipt">Loading receipt...</div>
-        <button class="whatsapp-btn" onclick="shareWhatsApp()">
+        <button class="whatsapp-btn" id="sideshareBtn" onclick="shareWhatsApp()" disabled style="opacity:0.5;cursor:not-allowed;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
             <path
               d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"
@@ -1278,6 +1278,8 @@
               b.style.cursor = "pointer";
             }
             if (l) l.textContent = "Share Video on WhatsApp";
+            const sideBtn = document.getElementById('sideshareBtn');
+            if (sideBtn) { sideBtn.disabled = false; sideBtn.style.opacity = '1'; sideBtn.style.cursor = 'pointer'; }
             resolveReady();
           };
           // Use a smaller timeslice on iOS to flush chunks more often.
@@ -1453,6 +1455,7 @@
         recordedChunks = [];
         recordedBlob = null;
         recordedReady = null;
+        const sideBtn = document.getElementById('sideshareBtn'); if (sideBtn) { sideBtn.disabled = true; sideBtn.style.opacity = '0.5'; sideBtn.style.cursor = 'not-allowed'; }
         pausedAt = 0;
         isDone = false;
         isPlaying = true;
@@ -1577,22 +1580,17 @@
       }
 
       async function shareWhatsApp() {
-        // Wait for recording (and iOS post-mux) to complete.
+        // If recording hasn't started yet, user hasn't pressed Play.
+        if (!recordedReady && !recordedBlob) {
+          alert("Press ▶ PLAY first to generate your video, then share!");
+          return;
+        }
+        // Wait for mux to complete if still in progress.
         if (recordedReady) {
           try { await recordedReady; } catch (_) {}
-        } else if (
-          !recordedBlob &&
-          mediaRecorder &&
-          mediaRecorder.state === "inactive" &&
-          recordedChunks.length > 0
-        ) {
-          await new Promise((resolve) => setTimeout(resolve, 1200));
         }
-
         if (!recordedBlob) {
-          alert(
-            "We're crafting your high-quality video! Please watch it to the end or wait a moment for the download to be ready.",
-          );
+          alert("Video is still being prepared. Please wait a few seconds and try again.");
           return;
         }
 
@@ -1654,8 +1652,11 @@
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 5000);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         alert(
-          "Video downloaded! Open WhatsApp → attach the video from your Downloads folder.",
+          isIOS
+            ? "Video saved! Open WhatsApp → tap the attachment icon → choose Files → find your video there."
+            : "Video downloaded! Open WhatsApp → tap attachment → choose the video from your Downloads folder."
         );
       }
 
