@@ -1555,7 +1555,9 @@
 
         const ext = "mp4"; // Always use .mp4 for mobile compatibility
         const safeName = (calcData.name || "").trim().replace(/\s+/g, "_");
-        const fileName = safeName ? `${safeName}_niat_india.${ext}` : `mothers_day_niat_india.${ext}`;
+        const fileName = safeName
+          ? `${safeName}_niat_india.${ext}`
+          : `mothers_day_niat_india.${ext}`;
         // Wrap blob as video/mp4 so mobile players recognize it
         const mobileBlob = new Blob([recordedBlob], { type: "video/mp4" });
         const file = new File([mobileBlob], fileName, { type: "video/mp4" });
@@ -1569,7 +1571,7 @@
             await navigator.share({
               files: [file],
               title: `Unwrap Your MOM's Love 💗`,
-              text: "💗 Happy Mother's Day, Maa! Thank you for everything. — from NIAT India",
+              text: "💗 Happy Mother's Day, Maa! Thank you for everything.",
             });
             return;
           } catch (err) {
@@ -1592,7 +1594,9 @@
         if (!skipTrack && window.MBAnalytics)
           window.MBAnalytics.track("download");
         const safeName = (calcData.name || "").trim().replace(/\s+/g, "_");
-        const fileName = safeName ? `${safeName}_niat_india.mp4` : `mothers_day_niat_india.mp4`;
+        const fileName = safeName
+          ? `${safeName}_niat_india.mp4`
+          : `mothers_day_niat_india.mp4`;
         const mobileBlob = new Blob([recordedBlob], { type: "video/mp4" });
         const url = URL.createObjectURL(mobileBlob);
         const a = document.createElement("a");
