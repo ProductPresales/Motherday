@@ -190,20 +190,41 @@ async function handleMuxAudio(req, res) {
     // Fallback: if libx264 isn't available on the host, fall back to stream-copy
     // video (still re-encodes audio + remuxes to non-fragmented MP4), so the
     // user always gets a video with audio.
-    function buildArgs(videoCodecArgs) {
+    // Notes on the flag choices (all driven by iPhone WhatsApp behaviour):
+    //   -fflags +genpts         regenerate timestamps from scratch — MediaRecorder
+    //                           output sometimes has gaps/non-zero starts that
+    //                           break WhatsApp's re-transcode (silent audio).
+    //   -vf fps=30 / -r 30      force constant frame rate. canvas.captureStream
+    //                           is VFR; iPhone WhatsApp drops audio on VFR mp4s.
+    //   -vsync cfr              same intent at the muxer level.
+    //   -async 1                resample/pad audio so it stays in sync with the
+    //                           regenerated video timestamps.
+    //   -ar 48000               iOS prefers 48 kHz AAC; 44.1 kHz sometimes
+    //                           survives Safari but fails WhatsApp's reencode.
+    //   -profile:a aac_low      explicit AAC-LC; some iOS pipelines reject
+    //                           anything that smells like HE-AAC.
+    //   baseline H.264 + yuv420p + faststart + non-fragmented → universal play.
+    function buildArgs(videoCodecArgs, useVf) {
       return [
         '-y',
+        '-fflags', '+genpts',
         '-i', inPath,
         '-stream_loop', '-1', '-i', bgmPath, // loop bgm to cover any video length
         '-map', '0:v:0',
         '-map', '1:a:0',
         ...videoCodecArgs,
+        ...(useVf ? ['-vf', 'fps=30,format=yuv420p'] : []),
+        '-r', '30',
+        '-vsync', 'cfr',
         '-c:a', 'aac',
+        '-profile:a', 'aac_low',
         '-b:a', '160k',
-        '-ar', '44100',
+        '-ar', '48000',
         '-ac', '2',
+        '-async', '1',
         '-shortest',
         '-movflags', '+faststart',
+        '-max_muxing_queue_size', '1024',
         '-f', 'mp4',
         outPath,
       ];
@@ -230,10 +251,11 @@ async function handleMuxAudio(req, res) {
         '-pix_fmt', 'yuv420p',
         '-profile:v', 'baseline',
         '-level', '3.1',
-      ]));
+      ], true));
     } catch (encodeErr) {
       console.warn('libx264 encode failed, falling back to copy:', encodeErr.message);
-      await runFfmpeg(buildArgs(['-c:v', 'copy']));
+      // copy path can't apply -vf; rely on muxer-level cfr/async only
+      await runFfmpeg(buildArgs(['-c:v', 'copy'], false));
     }
 
     const out = await fs.promises.readFile(outPath);
