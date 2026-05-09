@@ -2176,17 +2176,23 @@
             niatLogoImg.naturalWidth > 0
           ) {
             ctx.save();
-            ctx.filter = "brightness(0) invert(1)";
             const logoW = 120;
             const logoH =
               niatLogoImg.naturalHeight * (logoW / niatLogoImg.naturalWidth);
-            ctx.drawImage(
-              niatLogoImg,
-              W / 2 - logoW / 2,
-              cy - 280,
-              logoW,
-              logoH,
-            );
+            const logoX = W / 2 - logoW / 2;
+            const logoY = cy - 280;
+
+            // iOS fallback for filter:brightness(0) invert(1)
+            const offCanvas = document.createElement("canvas");
+            offCanvas.width = logoW;
+            offCanvas.height = logoH;
+            const offCtx = offCanvas.getContext("2d");
+            offCtx.drawImage(niatLogoImg, 0, 0, logoW, logoH);
+            offCtx.globalCompositeOperation = "source-in";
+            offCtx.fillStyle = "#FFFFFF";
+            offCtx.fillRect(0, 0, logoW, logoH);
+
+            ctx.drawImage(offCanvas, logoX, logoY);
             ctx.restore();
           } else {
             ctx.font = '68px "Bebas Neue"';
