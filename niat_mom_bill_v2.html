@@ -931,7 +931,7 @@
             <div class="scrubber-fill" id="scrubberFill"></div>
             <div class="scrubber-thumb" id="scrubberThumb"></div>
           </div>
-          <span class="time-label">0:49</span>
+          <span class="time-label">0:50</span>
         </div>
         <div class="btn-row">
           <button class="ctrl-btn primary" onclick="togglePlay()" id="playPauseBtn">▶ PLAY</button>
@@ -964,14 +964,15 @@
     let pausedAt = 0;
     let isPlaying = false;
     let isDone = false;
-    const DURATION = 49000;
+    const DURATION = 50000;
 
-    const FRAME_TIMES = [0, 4000, 9000, 13000, 17000, 21000, 25000, 29000, 33000, 42000, 49000];
+    const FRAME_TIMES = [0, 4000, 10000, 14000, 18000, 22000, 26000, 30000, 34000, 43000, 50000];
 
     // ── PHOTO & RECORDING ──────────────────────────────
     let momPhotoURL = null;
     let momPhotoImg = null; // Pre-loaded Image for canvas drawing
-    let niatLogoImg = null; // Pre-loaded Logo image
+    const niatLogoImg = new Image();
+    niatLogoImg.src = 'public/logo_niat.png';
     let recordedChunks = [];
     let mediaRecorder = null;
     let recordedBlob = null;
@@ -1400,7 +1401,7 @@
     function drawFrame(ctx, t) {
       if (!ctx) ctx = document.getElementById('mainCanvas').getContext('2d');
       const W = 540, H = 960, n = calcData;
-      const F = [[0,4000],[4000,9000],[9000,13000],[13000,17000],[17000,21000],[21000,25000],[25000,29000],[29000,33000],[33000,42000],[42000,49000]];
+      const F = [[0,4000],[4000,10000],[10000,14000],[14000,18000],[18000,22000],[22000,26000],[26000,30000],[30000,34000],[34000,43000],[43000,50000]];
       const fp    = i => seg(t, F[i][0], F[i][1]);
       const animP = i => Math.min(1, fp(i) * (F[i][1]-F[i][0]) / 1500);
       const inF   = i => t >= F[i][0] && t < F[i][1];
@@ -1556,24 +1557,27 @@
         ctx.restore();
         ctx.save(); ctx.textAlign='center'; const cy=H/2;
         ctx.globalAlpha=easeOut(Math.min(1,p*3));
-        ctx.font='12px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.6)';
-        ctx.fillText('\u2014 Issued at NIAT \u2014',W/2,cy-148);
-        hline(cy-130);
-        typewrite(ctx,'For mothers, who carried more than we ever asked them to notice.',Math.min(1,p*2),W/2,cy-58,'italic 26px "Playfair Display"','rgba(255,245,247,0.9)',W-120,40);
-        hline(cy+14);
+
+        hline(cy-110);
+        typewrite(ctx,'For mothers, who carried more than we ever asked them to notice.',Math.min(1,p*2),W/2,cy-40,'italic 26px "Playfair Display"','rgba(255,245,247,0.9)',W-120,40);
+        hline(cy+40);
         ctx.globalAlpha=easeOut(seg(p,0.3,1));
         ctx.font='500 22px "IBM Plex Mono"'; ctx.fillStyle='#F8BBD0';
-        ctx.fillText('#MomUnwrapped',W/2,cy+58);
+        ctx.fillText('#MomUnwrapped',W/2,cy+80);
         ctx.font='13px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.65)';
-        ctx.fillText('niatindia.com/mom',W/2,cy+94);
+        ctx.fillText('niatindia.com/mom',W/2,cy+120);
         ctx.globalAlpha=easeOut(seg(p,0.5,1));
-        // Placeholder for NIAT Logo
-        // if (niatLogoImg && niatLogoImg.complete) {
-        //   ctx.drawImage(niatLogoImg, W/2 - 50, cy + 120, 100, 50);
-        // } else {
+        if (niatLogoImg && niatLogoImg.complete && niatLogoImg.naturalWidth > 0) {
+          ctx.save();
+          ctx.filter = 'brightness(0) invert(1)';
+          const logoW = 120;
+          const logoH = niatLogoImg.naturalHeight * (logoW / niatLogoImg.naturalWidth);
+          ctx.drawImage(niatLogoImg, W/2 - logoW/2, cy - 280, logoW, logoH);
+          ctx.restore();
+        } else {
           ctx.font='68px "Bebas Neue"'; ctx.fillStyle='rgba(255,245,247,0.14)';
           ctx.fillText('NIAT',W/2,cy+172);
-        // }
+        }
         ctx.font='10px "IBM Plex Mono"'; ctx.fillStyle='rgba(248,187,208,0.3)';
         ctx.fillText('\u00a9 2026 NIAT India',W/2,cy+210);
         ctx.restore();
