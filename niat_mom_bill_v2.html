@@ -1624,8 +1624,21 @@
           }
         }
 
-        // Fallback: download the video so user can share it manually (don't double-count as download)
+        // Desktop / browsers without file-share support:
+        // 1) Download the video so the user has the file
+        // 2) Open WhatsApp Web with a pre-filled message to attach it manually
         downloadVideo(true);
+        const waText = encodeURIComponent(
+          "💗 Happy Mother's Day, Maa! Thank you for everything. — from NIAT India"
+        );
+        try {
+          window.open(`https://wa.me/?text=${waText}`, "_blank", "noopener");
+        } catch (_) {}
+        setTimeout(() => {
+          alert(
+            "Video downloaded! WhatsApp Web has opened — attach the downloaded video from your Downloads folder."
+          );
+        }, 400);
       }
 
       async function downloadVideo(skipTrack) {
