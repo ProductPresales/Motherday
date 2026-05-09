@@ -269,6 +269,23 @@ async function handleMuxAudio(req, res) {
     }
 
     const out = await fs.promises.readFile(outPath);
+
+    // Stash most-recent iPhone request for offline diagnosis (input + output
+    // + UA). Overwrites every call. Inspect via /api/debug-last-input?key=...
+    try {
+      const stashDir = path.join(tmpDir, 'mux_last');
+      await fs.promises.mkdir(stashDir, { recursive: true });
+      await fs.promises.writeFile(path.join(stashDir, 'in.mp4'), buf);
+      await fs.promises.writeFile(path.join(stashDir, 'out.mp4'), out);
+      await fs.promises.writeFile(path.join(stashDir, 'meta.json'), JSON.stringify({
+        ua: String(req.headers['user-agent'] || ''),
+        inSize: buf.length,
+        outSize: out.length,
+        log: debugLog,
+        ts: new Date().toISOString(),
+      }, null, 2));
+    } catch (_) { /* best-effort */ }
+
     res.writeHead(200, {
       'Content-Type': 'video/mp4',
       'Content-Length': out.length,
@@ -287,6 +304,20 @@ async function handleMuxAudio(req, res) {
     fs.promises.unlink(inPath).catch(() => {});
     fs.promises.unlink(outPath).catch(() => {});
   }
+}
+
+async function handleDebugLast(req, res, urlPath) {
+  const file = urlPath.replace('/api/debug-last/', '');
+  if (!['in.mp4', 'out.mp4', 'meta.json'].includes(file)) {
+    res.writeHead(404); res.end('not found'); return;
+  }
+  const fp = path.join(os.tmpdir(), 'mux_last', file);
+  fs.stat(fp, (err) => {
+    if (err) { res.writeHead(404); res.end('no stash yet'); return; }
+    const ct = file.endsWith('.json') ? 'application/json' : 'video/mp4';
+    res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'no-store' });
+    fs.createReadStream(fp).pipe(res);
+  });
 }
 
 async function handleStats(req, res) {
@@ -338,6 +369,7 @@ const server = http.createServer(async (req, res) => {
 
   if (urlPath === '/api/track' && req.method === 'POST') return handleTrack(req, res);
   if (urlPath === '/api/mux-audio' && req.method === 'POST') return handleMuxAudio(req, res);
+  if (urlPath.startsWith('/api/debug-last/') && req.method === 'GET') return handleDebugLast(req, res, urlPath);
   if (urlPath === '/dashboard-stats/data' && req.method === 'GET') {
     if (!checkAdminAuth(req, res)) return;
     return handleStats(req, res);
