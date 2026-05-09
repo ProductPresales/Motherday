@@ -172,6 +172,8 @@ async function handleMuxAudio(req, res) {
   const inPath = path.join(tmpDir, `mux_${tag}_in.mp4`);
   const outPath = path.join(tmpDir, `mux_${tag}_out.mp4`);
   const bgmPath = path.join(ROOT, 'audio', 'bgm.mp3');
+  const debug = (req.url || '').includes('debug=1');
+  const debugLog = [];
   try {
     const buf = await readBinaryBody(req, 50 * 1024 * 1024); // 50MB cap
     if (buf.length < 1000) {
@@ -252,10 +254,18 @@ async function handleMuxAudio(req, res) {
         '-profile:v', 'baseline',
         '-level', '3.1',
       ], true));
+      debugLog.push('encode: ok');
     } catch (encodeErr) {
       console.warn('libx264 encode failed, falling back to copy:', encodeErr.message);
+      debugLog.push('encode: FAIL ' + encodeErr.message);
       // copy path can't apply -vf; rely on muxer-level cfr/async only
-      await runFfmpeg(buildArgs(['-c:v', 'copy'], false));
+      try {
+        await runFfmpeg(buildArgs(['-c:v', 'copy'], false));
+        debugLog.push('copy: ok');
+      } catch (copyErr) {
+        debugLog.push('copy: FAIL ' + copyErr.message);
+        throw copyErr;
+      }
     }
 
     const out = await fs.promises.readFile(outPath);
@@ -268,7 +278,11 @@ async function handleMuxAudio(req, res) {
   } catch (err) {
     console.error('mux error:', err.message);
     res.writeHead(500, { 'Content-Type': 'text/plain' });
-    res.end('mux failed');
+    if (debug) {
+      res.end('mux failed\n' + err.message + '\n---\n' + debugLog.join('\n'));
+    } else {
+      res.end('mux failed');
+    }
   } finally {
     fs.promises.unlink(inPath).catch(() => {});
     fs.promises.unlink(outPath).catch(() => {});
