@@ -1,6 +1,9 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+const crypto = require('crypto');
+const { spawn } = require('child_process');
 const { Pool } = require('pg');
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
@@ -149,6 +152,75 @@ async function handleTrack(req, res) {
   }
 }
 
+function readBinaryBody(req, maxBytes) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let total = 0;
+    req.on('data', (c) => {
+      total += c.length;
+      if (total > maxBytes) { req.destroy(); reject(new Error('payload too large')); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+async function handleMuxAudio(req, res) {
+  const tmpDir = os.tmpdir();
+  const tag = crypto.randomBytes(8).toString('hex');
+  const inPath = path.join(tmpDir, `mux_${tag}_in.mp4`);
+  const outPath = path.join(tmpDir, `mux_${tag}_out.mp4`);
+  const bgmPath = path.join(ROOT, 'audio', 'bgm.mp3');
+  try {
+    const buf = await readBinaryBody(req, 50 * 1024 * 1024); // 50MB cap
+    if (buf.length < 1000) {
+      res.writeHead(400, { 'Content-Type': 'text/plain' });
+      res.end('empty video');
+      return;
+    }
+    await fs.promises.writeFile(inPath, buf);
+
+    await new Promise((resolve, reject) => {
+      const ff = spawn('ffmpeg', [
+        '-y',
+        '-i', inPath,
+        '-i', bgmPath,
+        '-map', '0:v:0',
+        '-map', '1:a:0',
+        '-c:v', 'copy',
+        '-c:a', 'aac',
+        '-b:a', '160k',
+        '-shortest',
+        '-movflags', '+faststart',
+        outPath,
+      ], { stdio: ['ignore', 'ignore', 'pipe'] });
+      let errOut = '';
+      ff.stderr.on('data', (d) => { errOut += d.toString(); });
+      ff.on('error', reject);
+      ff.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new Error('ffmpeg exit ' + code + ': ' + errOut.slice(-500)));
+      });
+    });
+
+    const out = await fs.promises.readFile(outPath);
+    res.writeHead(200, {
+      'Content-Type': 'video/mp4',
+      'Content-Length': out.length,
+      'Cache-Control': 'no-store',
+    });
+    res.end(out);
+  } catch (err) {
+    console.error('mux error:', err.message);
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end('mux failed');
+  } finally {
+    fs.promises.unlink(inPath).catch(() => {});
+    fs.promises.unlink(outPath).catch(() => {});
+  }
+}
+
 async function handleStats(req, res) {
   if (!pool) return sendJson(res, 200, { env: ENV_NAME, table: TABLE, totals: {}, unique_visitors: 0, last_24h: {} });
   try {
@@ -197,6 +269,7 @@ const server = http.createServer(async (req, res) => {
   const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
 
   if (urlPath === '/api/track' && req.method === 'POST') return handleTrack(req, res);
+  if (urlPath === '/api/mux-audio' && req.method === 'POST') return handleMuxAudio(req, res);
   if (urlPath === '/dashboard-stats/data' && req.method === 'GET') {
     if (!checkAdminAuth(req, res)) return;
     return handleStats(req, res);

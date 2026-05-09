@@ -1136,59 +1136,28 @@
       const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
       let recordedReady = null; // Promise that resolves once recordedBlob is final (post-mux on iOS)
-      let _ffmpeg = null;
 
-      async function loadFfmpeg() {
-        if (_ffmpeg) return _ffmpeg;
-        const ffmpegMod = await import(
-          "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js"
-        );
-        const utilMod = await import(
-          "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js"
-        );
-        const ff = new ffmpegMod.FFmpeg();
-        const baseURL =
-          "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd";
-        await ff.load({
-          coreURL: await utilMod.toBlobURL(
-            `${baseURL}/ffmpeg-core.js`,
-            "text/javascript",
-          ),
-          wasmURL: await utilMod.toBlobURL(
-            `${baseURL}/ffmpeg-core.wasm`,
-            "application/wasm",
-          ),
-        });
-        _ffmpeg = { ff, fetchFile: utilMod.fetchFile };
-        return _ffmpeg;
-      }
-
+      // iOS Safari MediaRecorder writes a silent audio track. We send the
+      // recorded video to the server, which uses ffmpeg to mux bgm.mp3 into
+      // it, then returns the merged mp4. Falls back to the original blob if
+      // the network call fails so the user always gets *something*.
       async function muxBgmIntoVideo(videoBlob) {
         try {
-          const { ff, fetchFile } = await loadFfmpeg();
-          await ff.writeFile("in.mp4", await fetchFile(videoBlob));
-          const audioRes = await fetch(AUDIO_FILE);
-          const audioBuf = new Uint8Array(await audioRes.arrayBuffer());
-          await ff.writeFile("bgm.mp3", audioBuf);
-          await ff.exec([
-            "-i", "in.mp4",
-            "-i", "bgm.mp3",
-            "-map", "0:v:0",
-            "-map", "1:a:0",
-            "-c:v", "copy",
-            "-c:a", "aac",
-            "-b:a", "160k",
-            "-shortest",
-            "-movflags", "+faststart",
-            "out.mp4",
-          ]);
-          const data = await ff.readFile("out.mp4");
-          try { await ff.deleteFile("in.mp4"); } catch (_) {}
-          try { await ff.deleteFile("bgm.mp3"); } catch (_) {}
-          try { await ff.deleteFile("out.mp4"); } catch (_) {}
-          return new Blob([data.buffer], { type: "video/mp4" });
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 60000);
+          const resp = await fetch("/api/mux-audio", {
+            method: "POST",
+            headers: { "Content-Type": "video/mp4" },
+            body: videoBlob,
+            signal: ctrl.signal,
+          });
+          clearTimeout(timer);
+          if (!resp.ok) throw new Error("mux http " + resp.status);
+          const merged = await resp.blob();
+          if (!merged || merged.size < 1000) throw new Error("empty merged blob");
+          return new Blob([merged], { type: "video/mp4" });
         } catch (err) {
-          console.warn("iOS audio mux failed, returning original video:", err);
+          console.warn("server audio mux failed, using original video:", err);
           return videoBlob;
         }
       }
