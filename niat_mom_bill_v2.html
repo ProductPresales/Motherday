@@ -1221,55 +1221,10 @@
           recordedBlob = null;
           const canvasStream = bgCanvas.captureStream(30);
 
-          // --- Web Audio API for background music ---
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          const bgAudioCtx = new AudioContext();
-          // iOS requires the AudioContext to be resumed inside a user gesture.
-          if (bgAudioCtx.state === "suspended") {
-            try { await bgAudioCtx.resume(); } catch (_) {}
-          }
-
-          const bgAudioDest = bgAudioCtx.createMediaStreamDestination();
-          const bgAudioEl = new Audio();
-          bgAudioEl.src = AUDIO_FILE;
-          bgAudioEl.crossOrigin = "anonymous";
-          bgAudioEl.preload = "auto";
-          bgAudioEl.loop = false;
-          // iOS Safari needs the element to be playsinline-ish; setting muted=false explicitly.
-          bgAudioEl.muted = false;
-          bgAudioEl.volume = 1.0;
-
-          // Wait until the audio has enough data; without this, iOS captures silence.
-          await new Promise((resolve) => {
-            if (bgAudioEl.readyState >= 3) return resolve();
-            const done = () => {
-              bgAudioEl.removeEventListener("canplaythrough", done);
-              bgAudioEl.removeEventListener("loadeddata", done);
-              resolve();
-            };
-            bgAudioEl.addEventListener("canplaythrough", done, { once: true });
-            bgAudioEl.addEventListener("loadeddata", done, { once: true });
-            // Safety timeout so we never hang forever.
-            setTimeout(done, 2500);
-            try { bgAudioEl.load(); } catch (_) {}
-          });
-
-          const bgAudioSource = bgAudioCtx.createMediaElementSource(bgAudioEl);
-          bgAudioSource.connect(bgAudioDest); // → recorded stream
-
-          // iOS workaround: the Web Audio graph does not actually pull samples
-          // unless something is connected to AudioContext.destination. We connect
-          // a silent gain to keep the graph running without making it audible.
-          const silentGain = bgAudioCtx.createGain();
-          silentGain.gain.value = 0;
-          bgAudioSource.connect(silentGain);
-          silentGain.connect(bgAudioCtx.destination);
-
-          // Build combined stream by addTrack (more reliable on iOS than the
-          // MediaStream([...]) constructor with mixed track sources).
+          // We only record the canvas video stream locally. Audio is muxed server-side
+          // because Web Audio API + MediaRecorder audio sync is broken on Safari (iOS/Mac).
           const combinedStream = new MediaStream();
           canvasStream.getVideoTracks().forEach((t) => combinedStream.addTrack(t));
-          bgAudioDest.stream.getAudioTracks().forEach((t) => combinedStream.addTrack(t));
 
           // iOS Safari only supports video/mp4 from MediaRecorder; prefer that.
           const candidates = isIOS
@@ -1302,21 +1257,18 @@
           mediaRecorder.onstop = async () => {
             const actualMime = mediaRecorder.mimeType || "video/mp4";
             recordedBlob = new Blob(recordedChunks, { type: actualMime });
-            try { bgAudioEl.pause(); } catch (_) {}
-            try { bgAudioCtx.close(); } catch (_) {}
 
             const b = document.getElementById("endShareBtn");
             const l = document.getElementById("endShareLabel");
 
-            // On iOS, MediaRecorder writes a silent audio track. Mux bgm.mp3
-            // into the recorded mp4 so the downloaded/shared file has audio.
-            if (IS_IOS) {
-              if (l) l.textContent = "🎵 Adding music to your video...";
-              try {
-                recordedBlob = await muxBgmIntoVideo(recordedBlob);
-              } catch (e) {
-                console.warn("mux failed:", e);
-              }
+            // Safari MediaRecorder (Mac/iOS) has broken audio multiplexing. 
+            // We ALWAYS mux bgm.mp3 into the recorded video on the server 
+            // so the downloaded/shared file has perfectly synced audio.
+            if (l) l.textContent = "🎵 Adding music to your video...";
+            try {
+              recordedBlob = await muxBgmIntoVideo(recordedBlob);
+            } catch (e) {
+              console.warn("mux failed:", e);
             }
 
             if (b) {
@@ -1330,12 +1282,6 @@
           // Use a smaller timeslice on iOS to flush chunks more often.
           mediaRecorder.start(isIOS ? 100 : 200);
 
-          // Start audio FIRST so the first recorded chunk already has samples.
-          try {
-            await bgAudioEl.play();
-          } catch (e) {
-            console.warn("Background audio play failed:", e);
-          }
           bgStartTime = performance.now();
           bgTick();
         } catch (err) {
