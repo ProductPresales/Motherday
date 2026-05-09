@@ -1144,10 +1144,11 @@
       async function muxBgmIntoVideo(videoBlob) {
         try {
           const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 60000);
+          const timer = setTimeout(() => ctrl.abort(), 90000);
+          const actualMime = videoBlob.type || "video/mp4";
           const resp = await fetch("/api/mux-audio", {
             method: "POST",
-            headers: { "Content-Type": "video/mp4" },
+            headers: { "Content-Type": actualMime },
             body: videoBlob,
             signal: ctrl.signal,
           });
@@ -1372,9 +1373,6 @@
           `Meals of love: ${d.mealsLove.toLocaleString("en-IN")}<br>` +
           `Mornings for you: ${d.mornings.toLocaleString("en-IN")}`;
 
-        // Start perfect background recording immediately
-        startRecording();
-
         // Loading
         showPage("loading-page");
         document.getElementById("loadingName").textContent =
@@ -1432,6 +1430,9 @@
         showPlayOverlay(false);
         videoStartTime = performance.now() - pausedAt;
         updatePlayBtn();
+        if (pausedAt === 0) {
+          startRecording();
+        }
         startMusic();
         tick();
       }
@@ -1447,6 +1448,11 @@
 
       function replayVideo() {
         cancelAnimationFrame(animFrame);
+        if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+        cancelAnimationFrame(bgAnimFrame);
+        recordedChunks = [];
+        recordedBlob = null;
+        recordedReady = null;
         pausedAt = 0;
         isDone = false;
         isPlaying = true;
@@ -1455,6 +1461,7 @@
         videoStartTime = performance.now();
         updatePlayBtn();
         stopMusic();
+        startRecording();
         startMusic();
         tick();
       }

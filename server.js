@@ -169,11 +169,24 @@ function readBinaryBody(req, maxBytes) {
 async function handleMuxAudio(req, res) {
   const tmpDir = os.tmpdir();
   const tag = crypto.randomBytes(8).toString('hex');
-  const inPath = path.join(tmpDir, `mux_${tag}_in.mp4`);
+  const ct = (req.headers['content-type'] || '').toLowerCase();
+  const inExt = ct.includes('webm') ? '.webm' : '.mp4';
+  const inPath = path.join(tmpDir, `mux_${tag}_in${inExt}`);
   const outPath = path.join(tmpDir, `mux_${tag}_out.mp4`);
-  const bgmPath = path.join(ROOT, 'audio', 'bgm.mp3');
+  const bgmCandidates = [
+    path.join(ROOT, 'audio', 'bgm.mp3'),
+    path.join(ROOT, 'audio', 'bgm.m4a'),
+    path.join(ROOT, 'audio', 'bgm.ogg'),
+    path.join(__dirname, 'public', 'audio', 'bgm.mp3'),
+  ];
+  let bgmPath = bgmCandidates.find(p => { try { return fs.statSync(p).isFile(); } catch(_) { return false; } });
+  if (!bgmPath) {
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end('bgm audio file not found on server');
+    return;
+  }
   const debug = (req.url || '').includes('debug=1');
-  const debugLog = [];
+  const debugLog = [`inExt=${inExt}`, `bgm=${bgmPath}`];
   try {
     const buf = await readBinaryBody(req, 50 * 1024 * 1024); // 50MB cap
     if (buf.length < 1000) {
@@ -209,7 +222,7 @@ async function handleMuxAudio(req, res) {
     function buildArgs(videoCodecArgs, useVf) {
       return [
         '-y',
-        '-fflags', '+genpts',
+        '-fflags', '+genpts+discardcorrupt',
         '-i', inPath,
         '-stream_loop', '-1', '-i', bgmPath, // loop bgm to cover any video length
         '-map', '0:v:0',
