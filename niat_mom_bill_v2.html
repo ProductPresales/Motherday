@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mom's Bill · NIAT India</title>
+  <script src="/analytics.js" defer></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap');
 
@@ -972,7 +973,7 @@
     let momPhotoURL = null;
     let momPhotoImg = null; // Pre-loaded Image for canvas drawing
     const niatLogoImg = new Image();
-    niatLogoImg.src = 'public/logo_niat.png';
+    niatLogoImg.src = '/logo_niat.png';
     let recordedChunks = [];
     let mediaRecorder = null;
     let recordedBlob = null;
@@ -984,7 +985,7 @@
     let bgStartTime = 0;
 
     // ── AUDIO ──────────────────────────────────────────
-    const AUDIO_FILE = 'happy-birthday-background-score-anirudh-ravichander_ZvGJhSgt.mp3';
+    const AUDIO_FILE = '/audio/bgm.mp3';
     let playbackAudio = new Audio(AUDIO_FILE);
 
     function startMusic() {
@@ -1324,6 +1325,8 @@
         return;
       }
 
+      if (window.MBAnalytics) window.MBAnalytics.track('share_whatsapp');
+
       const ext = 'mp4'; // Always use .mp4 for mobile compatibility
       const fileName = `moms_bill_${(calcData.name || 'mom').replace(/\s+/g, '_')}.${ext}`;
       // Wrap blob as video/mp4 so mobile players recognize it
@@ -1345,12 +1348,13 @@
         }
       }
 
-      // Fallback: download the video so user can share it manually
-      downloadVideo();
+      // Fallback: download the video so user can share it manually (don't double-count as download)
+      downloadVideo(true);
     }
 
-    function downloadVideo() {
+    function downloadVideo(skipTrack) {
       if (!recordedBlob) { alert("We're crafting your high-quality video! Please watch it to the end or wait a moment for the download to be ready."); return; }
+      if (!skipTrack && window.MBAnalytics) window.MBAnalytics.track('download');
       const fileName = `moms_bill_${(calcData.name||'mom').replace(/\s+/g,'_')}.mp4`;
       const mobileBlob = new Blob([recordedBlob], { type: 'video/mp4' });
       const url = URL.createObjectURL(mobileBlob);
