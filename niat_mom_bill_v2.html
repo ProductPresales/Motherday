@@ -1419,7 +1419,7 @@
         // Update side receipt (simple summary)
         const d = calcData;
         document.getElementById("sideReceipt").innerHTML =
-          `<strong>MOM UNWRAPPED · ${d.name.toUpperCase()}</strong><br>` +
+          `<strong>MOM'S LOVE UNWRAPPED · ${d.name.toUpperCase()}</strong><br>` +
           `──────────────────<br>` +
           `Days as your mom: ${d.totalDays.toLocaleString("en-IN")}<br>` +
           `"Did you eat?": ${d.askedEat.toLocaleString("en-IN")}<br>` +
@@ -1839,7 +1839,7 @@
           ctx.globalAlpha = easeOut(Math.min(1, p * 2.5));
           ctx.font = 'italic 72px "Playfair Display"';
           ctx.fillStyle = "#FFF5F7";
-          ctx.fillText("Mom,", W / 2, H / 2);
+          ctx.fillText("Mom's Love", W / 2, H / 2);
           ctx.fillText("Unwrapped.", W / 2, H / 2 + 82);
           ctx.globalAlpha = easeOut(Math.min(1, (p - 0.5) * 4));
           ctx.font = '22px "IBM Plex Mono"';
@@ -2009,11 +2009,29 @@
           ctx.font = 'italic 24px "Playfair Display"';
           ctx.fillStyle = "#880E4F";
           ctx.fillText("Times she chose love", W / 2, H / 2 - 100);
-          if (ap > 0.5) {
-            ctx.globalAlpha = easeOut(Math.min(1, (ap - 0.5) * 2));
-            ctx.font = '130px "Playfair Display"';
-            ctx.fillStyle = "rgba(136,14,79,0.8)";
-            ctx.fillText("∞", W / 2, H / 2 + 60);
+          if (ap > 0.15) {
+            // Build-up: 1 → 10 → 100 → ... → 10000000 → ∞
+            const stages = [
+              "1",
+              "10",
+              "100",
+              "1000",
+              "10000",
+              "100000",
+              "1000000",
+              "10000000",
+              "∞",
+            ];
+            const t = Math.min(1, (ap - 0.15) / 0.8);
+            const idx = Math.min(stages.length - 1, Math.floor(t * stages.length));
+            const text = stages[idx];
+            const isInf = text === "∞";
+            ctx.globalAlpha = easeOut(Math.min(1, (ap - 0.15) * 3));
+            // Shrink font as the number grows so it stays inside the frame.
+            const fontSize = isInf ? 180 : Math.max(54, 130 - (text.length - 1) * 8);
+            ctx.font = `${isInf ? "" : "700 "}${fontSize}px "Playfair Display"`;
+            ctx.fillStyle = "rgba(136,14,79,0.85)";
+            ctx.fillText(text, W / 2, H / 2 + 60);
           }
           ctx.restore();
         }
@@ -2165,7 +2183,7 @@
           ctx.globalAlpha = easeOut(seg(p, 0.3, 1));
           ctx.font = '500 22px "IBM Plex Mono"';
           ctx.fillStyle = "#F8BBD0";
-          ctx.fillText("#MomUnwrapped", W / 2, cy + 80);
+          ctx.fillText("#MomsLoveUnwrapped", W / 2, cy + 80);
           ctx.font = '13px "IBM Plex Mono"';
           ctx.fillStyle = "rgba(248,187,208,0.65)";
           ctx.fillText("niatindia.com/mom", W / 2, cy + 120);
