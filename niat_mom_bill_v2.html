@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -1121,6 +1121,7 @@
       const niatLogoImg = new Image();
       niatLogoImg.src = "/logo_niat.png";
       let whiteNiatLogo = null; // Cached white version for overlay
+      let maroonNiatLogo = null; // Cached maroon version for overlay
       let recordedChunks = [];
       let mediaRecorder = null;
       let recordedBlob = null;
@@ -2193,10 +2194,10 @@
 
         // ══ PERSISTENT NIAT LOGO OVERLAY ════════════════
         if (niatLogoImg && niatLogoImg.complete && niatLogoImg.naturalWidth > 0) {
+          const logoW = 30;
+          const logoH = niatLogoImg.naturalHeight * (logoW / niatLogoImg.naturalWidth);
+
           if (!whiteNiatLogo) {
-            const logoW = 30;
-            const logoH =
-              niatLogoImg.naturalHeight * (logoW / niatLogoImg.naturalWidth);
             whiteNiatLogo = document.createElement("canvas");
             whiteNiatLogo.width = logoW;
             whiteNiatLogo.height = logoH;
@@ -2206,14 +2207,30 @@
             offCtx.fillStyle = "#FFFFFF";
             offCtx.fillRect(0, 0, logoW, logoH);
           }
+
+          if (!maroonNiatLogo) {
+            maroonNiatLogo = document.createElement("canvas");
+            maroonNiatLogo.width = logoW;
+            maroonNiatLogo.height = logoH;
+            const offCtx = maroonNiatLogo.getContext("2d");
+            offCtx.drawImage(niatLogoImg, 0, 0, logoW, logoH);
+            offCtx.globalCompositeOperation = "source-in";
+            offCtx.fillStyle = "#880E4F"; // -rose-dark
+            offCtx.fillRect(0, 0, logoW, logoH);
+          }
+
+          // Frames 3-8 (index 3 to 8 in the F array)
+          const isMaroon = (t >= F[3][0] && t < F[8][1]);
+          const activeLogo = isMaroon ? maroonNiatLogo : whiteNiatLogo;
+
           ctx.save();
           ctx.globalAlpha = 0.65;
           ctx.drawImage(
-            whiteNiatLogo,
-            W - whiteNiatLogo.width - 32,
+            activeLogo,
+            W - activeLogo.width - 32,
             32,
-            whiteNiatLogo.width,
-            whiteNiatLogo.height,
+            activeLogo.width,
+            activeLogo.height,
           );
           ctx.restore();
         }
