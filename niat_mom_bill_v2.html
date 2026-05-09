@@ -1133,6 +1133,65 @@
       // ── AUDIO ──────────────────────────────────────────
       const AUDIO_FILE = "/audio/bgm.mp3";
       let playbackAudio = new Audio(AUDIO_FILE);
+      const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      let recordedReady = null; // Promise that resolves once recordedBlob is final (post-mux on iOS)
+      let _ffmpeg = null;
+
+      async function loadFfmpeg() {
+        if (_ffmpeg) return _ffmpeg;
+        const ffmpegMod = await import(
+          "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js"
+        );
+        const utilMod = await import(
+          "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js"
+        );
+        const ff = new ffmpegMod.FFmpeg();
+        const baseURL =
+          "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd";
+        await ff.load({
+          coreURL: await utilMod.toBlobURL(
+            `${baseURL}/ffmpeg-core.js`,
+            "text/javascript",
+          ),
+          wasmURL: await utilMod.toBlobURL(
+            `${baseURL}/ffmpeg-core.wasm`,
+            "application/wasm",
+          ),
+        });
+        _ffmpeg = { ff, fetchFile: utilMod.fetchFile };
+        return _ffmpeg;
+      }
+
+      async function muxBgmIntoVideo(videoBlob) {
+        try {
+          const { ff, fetchFile } = await loadFfmpeg();
+          await ff.writeFile("in.mp4", await fetchFile(videoBlob));
+          const audioRes = await fetch(AUDIO_FILE);
+          const audioBuf = new Uint8Array(await audioRes.arrayBuffer());
+          await ff.writeFile("bgm.mp3", audioBuf);
+          await ff.exec([
+            "-i", "in.mp4",
+            "-i", "bgm.mp3",
+            "-map", "0:v:0",
+            "-map", "1:a:0",
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-b:a", "160k",
+            "-shortest",
+            "-movflags", "+faststart",
+            "out.mp4",
+          ]);
+          const data = await ff.readFile("out.mp4");
+          try { await ff.deleteFile("in.mp4"); } catch (_) {}
+          try { await ff.deleteFile("bgm.mp3"); } catch (_) {}
+          try { await ff.deleteFile("out.mp4"); } catch (_) {}
+          return new Blob([data.buffer], { type: "video/mp4" });
+        } catch (err) {
+          console.warn("iOS audio mux failed, returning original video:", err);
+          return videoBlob;
+        }
+      }
 
       function startMusic() {
         if (pausedAt === 0) {
@@ -1267,19 +1326,37 @@
           mediaRecorder.ondataavailable = (ev) => {
             if (ev.data.size > 0) recordedChunks.push(ev.data);
           };
-          mediaRecorder.onstop = () => {
+          // Promise that consumers (share/download) await before using recordedBlob.
+          let resolveReady;
+          recordedReady = new Promise((r) => { resolveReady = r; });
+
+          mediaRecorder.onstop = async () => {
             const actualMime = mediaRecorder.mimeType || "video/mp4";
             recordedBlob = new Blob(recordedChunks, { type: actualMime });
+            try { bgAudioEl.pause(); } catch (_) {}
+            try { bgAudioCtx.close(); } catch (_) {}
+
             const b = document.getElementById("endShareBtn");
             const l = document.getElementById("endShareLabel");
+
+            // On iOS, MediaRecorder writes a silent audio track. Mux bgm.mp3
+            // into the recorded mp4 so the downloaded/shared file has audio.
+            if (IS_IOS) {
+              if (l) l.textContent = "🎵 Adding music to your video...";
+              try {
+                recordedBlob = await muxBgmIntoVideo(recordedBlob);
+              } catch (e) {
+                console.warn("mux failed:", e);
+              }
+            }
+
             if (b) {
               b.disabled = false;
               b.style.opacity = "1";
               b.style.cursor = "pointer";
             }
             if (l) l.textContent = "Share Video on WhatsApp";
-            try { bgAudioEl.pause(); } catch (_) {}
-            try { bgAudioCtx.close(); } catch (_) {}
+            resolveReady();
           };
           // Use a smaller timeslice on iOS to flush chunks more often.
           mediaRecorder.start(isIOS ? 100 : 200);
@@ -1578,8 +1655,10 @@
       }
 
       async function shareWhatsApp() {
-        // If blob not yet ready (recording just stopped, onstop pending), wait
-        if (
+        // Wait for recording (and iOS post-mux) to complete.
+        if (recordedReady) {
+          try { await recordedReady; } catch (_) {}
+        } else if (
           !recordedBlob &&
           mediaRecorder &&
           mediaRecorder.state === "inactive" &&
@@ -1628,7 +1707,10 @@
         downloadVideo(true);
       }
 
-      function downloadVideo(skipTrack) {
+      async function downloadVideo(skipTrack) {
+        if (recordedReady) {
+          try { await recordedReady; } catch (_) {}
+        }
         if (!recordedBlob) {
           alert(
             "We're crafting your high-quality video! Please watch it to the end or wait a moment for the download to be ready.",
